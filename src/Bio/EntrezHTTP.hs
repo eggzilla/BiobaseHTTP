@@ -49,7 +49,7 @@ startSession program database query = do
 -- | Send query and return response XML
 sendQuery :: String -> String -> String -> IO L8.ByteString
 --sendQuery program database query = simpleHttp ("http://www.ncbi.nlm.nih.gov/blast/Blast.cgi?CMD=Put&PROGRAM=" ++ program ++ "&DATABASE=" ++ database ++ "&QUERY=" ++ querySequence)
-sendQuery program database query = simpleHttp ("http://eutils.ncbi.nlm.nih.gov/entrez/eutils/"++ program ++ ".fcgi?" ++ query)         
+sendQuery program database query = simpleHttp ("http://eutils.ncbi.nlm.nih.gov/entrez/eutils/"++ program ++ ".fcgi?" ++ "db=" ++ database ++ "&" ++ query)         
 
 -- |
 entrezHTTP :: EntrezHTTPQuery -> IO String

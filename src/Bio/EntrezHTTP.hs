@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE Arrows #-}
 
 -- | Interface for the NCBI Entrez REST webservice
 module Bio.EntrezHTTP ( EntrezHTTPQuery (..),
@@ -9,7 +10,6 @@ import Data.Conduit
 import qualified Data.ByteString.Lazy.Char8 as L8
 import Control.Monad.IO.Class (liftIO)    
 import qualified Control.Monad as CM
-import Bio.BlastXML 
 import Text.XML.HXT.Core
 import Network
 import qualified Data.Conduit.List as CL
@@ -18,7 +18,7 @@ import Control.Monad.Error as CM
 import Control.Concurrent
 import Data.Maybe
 import Data.Either
-import Bio.Core.Sequence
+import Bio.EntrezHTTPData
 
 data EntrezHTTPQuery = EntrezHTTPQuery 
   { program :: Maybe String
@@ -48,7 +48,6 @@ startSession program database query = do
 
 -- | Send query and return response XML
 sendQuery :: String -> String -> String -> IO L8.ByteString
---sendQuery program database query = simpleHttp ("http://www.ncbi.nlm.nih.gov/blast/Blast.cgi?CMD=Put&PROGRAM=" ++ program ++ "&DATABASE=" ++ database ++ "&QUERY=" ++ querySequence)
 sendQuery program database query = simpleHttp ("http://eutils.ncbi.nlm.nih.gov/entrez/eutils/"++ program ++ ".fcgi?" ++ "db=" ++ database ++ "&" ++ query)         
 
 -- |
@@ -60,5 +59,39 @@ entrezHTTP (EntrezHTTPQuery program database query) = do
   let selectedDatabase = fromMaybe defaultDatabase database  
   startSession selectedProgram selectedDatabase query
 
+-- | Parse entrez summary result
+getEntrezSummary :: ArrowXml a => a XmlTree EntrezSummary
+getEntrezSummary = atTag "eSummaryResult" >>> 
+  proc entrezSummary -> do
+  document_Summaries <- listA getEntrezDocSum -< entrezSummary
+  returnA -< EntrezSummary {
+    documentSummaries = document_Summaries
+    }     
 
-      
+-- | 
+getEntrezDocSum :: ArrowXml a => a XmlTree EntrezDocSum
+getEntrezDocSum = atTag "DocSum" >>> 
+  proc entrezDocSum -> do
+  summary_Id <- getAttrValue "Id" -< entrezDocSum
+  summary_Items <- listA getSummaryItem -< entrezDocSum
+  returnA -< EntrezDocSum {
+    summaryId = summary_Id,
+    summaryItems = summary_Items
+    } 
+
+-- | 
+getSummaryItem :: ArrowXml a => a XmlTree SummaryItem
+getSummaryItem = atTag "Item" >>> 
+  proc summaryItem -> do
+  item_Name <- getAttrValue "Name" -< summaryItem
+  item_Type <- getAttrValue "Type" -< summaryItem
+  item_Content <- getText -< summaryItem
+  returnA -< SummaryItem {
+    itemName = item_Name,
+    itemType = item_Type,
+    itemContent = item_Content
+    } 
+
+-- | gets all subtrees with the specified tag name
+atTag :: ArrowXml a =>  String -> a XmlTree XmlTree
+atTag tag = deep (isElem >>> hasName tag)

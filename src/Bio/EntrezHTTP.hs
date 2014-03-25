@@ -3,7 +3,8 @@
 
 -- | Interface for the NCBI Entrez REST webservice
 module Bio.EntrezHTTP ( EntrezHTTPQuery (..),
-                       entrezHTTP) where
+                       entrezHTTP,
+                       getEntrezSummary) where
 
 import Network.HTTP.Conduit 
 import Data.Conduit    

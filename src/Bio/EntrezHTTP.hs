@@ -2,8 +2,10 @@
 {-# LANGUAGE Arrows #-}
 
 -- | Interface for the NCBI Entrez REST webservice
-module Bio.EntrezHTTP ( EntrezHTTPQuery (..),
+module Bio.EntrezHTTP (module Bio.EntrezHTTPData,
+                       EntrezHTTPQuery(..),
                        entrezHTTP,
+                       readEntrezSummary,
                        getEntrezSummary,
                        getSummaryItem
                       ) where
@@ -61,6 +63,10 @@ entrezHTTP (EntrezHTTPQuery program database query) = do
   let selectedProgram = fromMaybe defaultProgram program
   let selectedDatabase = fromMaybe defaultDatabase database  
   startSession selectedProgram selectedDatabase query
+
+-- | Read entrez summary from internal haskell string
+readEntrezSummary :: String -> EntrezSummary
+readEntrezSummary input = head (runLA (xreadDoc >>> getEntrezSummary) input)
 
 -- | Parse entrez summary result
 getEntrezSummary :: ArrowXml a => a XmlTree EntrezSummary

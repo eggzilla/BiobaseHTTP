@@ -5,7 +5,7 @@
 module Bio.EntrezHTTP (module Bio.EntrezHTTPData,
                        EntrezHTTPQuery(..),
                        entrezHTTP,
-                       readEntrezSummary,
+                       readEntrezSummaries,
                        getEntrezSummary,
                        getSummaryItem
                       ) where
@@ -66,11 +66,11 @@ entrezHTTP (EntrezHTTPQuery program database query) = do
 
 -- | Read entrez summary from internal haskell string
 readEntrezSummary :: String -> EntrezSummary
-readEntrezSummary input = head (runLA (xreadDoc >>> getEntrezSummary) input)
+readEntrezSummary input = runLA (xreadDoc >>> getEntrezSummary) input
 
 -- | Parse entrez summary result
-getEntrezSummary :: ArrowXml a => a XmlTree EntrezSummary
-getEntrezSummary = atTag "eSummaryResult" >>> 
+getEntrezSummaries :: ArrowXml a => a XmlTree EntrezSummary
+getEntrezSummaries = atTag "eSummaryResult" >>> 
   proc entrezSummary -> do
   document_Summaries <- listA getEntrezDocSum -< entrezSummary
   returnA -< EntrezSummary {
@@ -78,8 +78,8 @@ getEntrezSummary = atTag "eSummaryResult" >>>
     }     
 
 -- | 
-getEntrezDocSum :: ArrowXml a => a XmlTree EntrezDocSum
-getEntrezDocSum = atTag "DocSum" >>> 
+getEntrezDocSums :: ArrowXml a => a XmlTree EntrezDocSum
+getEntrezDocSums = atTag "DocSum" >>> 
   proc entrezDocSum -> do
   summary_Id <- atTag "Id" >>> getChildren >>> getText -< entrezDocSum
   summary_Items <- listA getSummaryItem -< entrezDocSum
@@ -89,8 +89,8 @@ getEntrezDocSum = atTag "DocSum" >>>
     } 
 
 -- | 
-getSummaryItem :: ArrowXml a => a XmlTree SummaryItem
-getSummaryItem = atTag "Item" >>> 
+getSummaryItems :: ArrowXml a => a XmlTree SummaryItem
+getSummaryItems = atTag "Item" >>> 
   proc summaryItem -> do
   item_Name <- getAttrValue "Name" -< summaryItem
   item_Type <- getAttrValue "Type" -< summaryItem

@@ -4,7 +4,9 @@
 -- | Interface for the NCBI Entrez REST webservice
 module Bio.EntrezHTTP ( EntrezHTTPQuery (..),
                        entrezHTTP,
-                       getEntrezSummary) where
+                       getEntrezSummary,
+                       getSummaryItem
+                      ) where
 
 import Network.HTTP.Conduit 
 import Data.Conduit    
@@ -73,7 +75,7 @@ getEntrezSummary = atTag "eSummaryResult" >>>
 getEntrezDocSum :: ArrowXml a => a XmlTree EntrezDocSum
 getEntrezDocSum = atTag "DocSum" >>> 
   proc entrezDocSum -> do
-  summary_Id <- getAttrValue "Id" -< entrezDocSum
+  summary_Id <- atTag "Id" >>> getChildren >>> getText -< entrezDocSum
   summary_Items <- listA getSummaryItem -< entrezDocSum
   returnA -< EntrezDocSum {
     summaryId = summary_Id,
@@ -86,7 +88,7 @@ getSummaryItem = atTag "Item" >>>
   proc summaryItem -> do
   item_Name <- getAttrValue "Name" -< summaryItem
   item_Type <- getAttrValue "Type" -< summaryItem
-  item_Content <- getText -< summaryItem
+  item_Content <- getText <<< getChildren -< summaryItem
   returnA -< SummaryItem {
     itemName = item_Name,
     itemType = item_Type,

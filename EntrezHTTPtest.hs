@@ -3,10 +3,14 @@ module Main where
     
 import System.Console.CmdArgs
 import Bio.EntrezHTTP
+import Bio.Sequence.Fasta
 import qualified Data.Map as M
+import qualified Data.ByteString.Lazy.Char8 as B
 import Text.XML.HXT.Core
+import Bio.Core.Sequence 
 
-main = do
+esummarytest :: IO ()
+esummarytest = do
   let program = Just "esummary"
   let database = Just "nucleotide" 
   let queryString = "id=556503834"
@@ -20,6 +24,18 @@ main = do
   --let summary = runLA  (xreadDoc >>> getEntrezSummary ) result 
   let summary = head (readEntrezSummaries result)
   print summary
+
+
+main = do
+  let program = Just "efetch"
+  let database = Just "nucleotide" 
+  let queryString = "id=556503834&rettype=fasta"
+  let entrezQuery = EntrezHTTPQuery program database queryString 
+  result <- entrezHTTP entrezQuery
+  let parsedFasta =  (mkSeqs . B.lines) (B.pack result)
+
+  --let summary = head (readEntrezSummaries result)
+  print (seqid (head (parsedFasta)))
 
 
 -- | gets all subtrees with the specified tag name

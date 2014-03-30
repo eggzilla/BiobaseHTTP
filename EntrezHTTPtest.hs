@@ -25,18 +25,18 @@ esummarytest = do
   let summary = head (readEntrezSummaries result)
   print summary
 
-
 main = do
   let program = Just "efetch"
   let database = Just "nucleotide" 
-  let queryString = "id=556503834&rettype=fasta"
+  let queryString = "id=556503834&seq_start=10&seq_stop=40&rettype=fasta"
   let entrezQuery = EntrezHTTPQuery program database queryString 
   result <- entrezHTTP entrezQuery
-  let parsedFasta =  (mkSeqs . B.lines) (B.pack result)
+  let parsedFasta = (mkSeqs . B.lines) (B.pack result)
 
   --let summary = head (readEntrezSummaries result)
   print (seqid (head (parsedFasta)))
-
+  --print (take 10 (drop 10 (toStr (seqdata (head (parsedFasta))))))
+  print (toStr (seqdata (head (parsedFasta))))
 
 -- | gets all subtrees with the specified tag name
 atTag :: ArrowXml a =>  String -> a XmlTree XmlTree

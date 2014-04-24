@@ -48,10 +48,10 @@ data LineageTaxon = LineageTaxon
 
 -- | Simplified data structure 
 data SimpleTaxon = SimpleTaxon
-  {  simpleTaxId :: Int
-  ,  simpleScientificName :: String
-  ,  simpleParentTaxId :: Int
-  ,  simpleRank :: Rank
+  {  simpleTaxonTaxId :: Int
+  ,  simpleTaxonScientificName :: String
+  ,  simpleTaxonParentTaxId :: Int
+  ,  simpleTaxonRank :: Rank
   } deriving (Show, Eq)
 
 -- | Data structure for Entrez summary result

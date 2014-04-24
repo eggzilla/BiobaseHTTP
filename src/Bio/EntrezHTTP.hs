@@ -79,10 +79,10 @@ getEntrezSimpleTaxon = atTag "Taxon" >>>
   simple_ParentTaxId <- atTag "ParentTaxId" >>> getChildren >>> getText -< entrezSimpleTaxon
   simple_Rank <- atTag "Rank" >>> getChildren >>> getText -< entrezSimpleTaxon
   returnA -< SimpleTaxon {
-    simpleTaxId = read simple_TaxId :: Int,
-    simpleScientificName = simple_ScientificName,
-    simpleParentTaxId = read simple_ParentTaxId :: Int,
-    simpleRank = read simple_Rank :: Rank
+    simpleTaxonTaxId = read simple_TaxId :: Int,
+    simpleTaxonScientificName = simple_ScientificName,
+    simpleTaxonParentTaxId = read simple_ParentTaxId :: Int,
+    simpleTaxonRank = read simple_Rank :: Rank
     } 
 
 -- | Read entrez summary from internal haskell string

@@ -25,6 +25,7 @@ import Control.Concurrent
 import Data.Maybe
 import Data.Either
 import Bio.EntrezHTTPData
+import Bio.TaxonomyData (Rank)
 
 data EntrezHTTPQuery = EntrezHTTPQuery 
   { program :: Maybe String
@@ -64,6 +65,25 @@ entrezHTTP (EntrezHTTPQuery program database query) = do
   let selectedProgram = fromMaybe defaultProgram program
   let selectedDatabase = fromMaybe defaultDatabase database  
   startSession selectedProgram selectedDatabase query
+
+-- | Read entrez fetch for taxonomy database into a simplyfied datatype 
+-- Result of e.g: http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=1406860
+readEntrezSimpleTaxon :: String -> [SimpleTaxon]
+readEntrezSimpleTaxon input = runLA (xreadDoc >>> getEntrezSimpleTaxon) input
+
+getEntrezSimpleTaxon :: ArrowXml a => a XmlTree SimpleTaxon
+getEntrezSimpleTaxon = atTag "Taxon" >>>
+  proc entrezSimpleTaxon -> do
+  simple_TaxId <- atTag "TaxId" >>> getChildren >>> getText -< entrezSimpleTaxon
+  simple_ScientificName <- atTag "ScientificName" >>> getChildren >>> getText -< entrezSimpleTaxon
+  simple_ParentTaxId <- atTag "ParentTaxId" >>> getChildren >>> getText -< entrezSimpleTaxon
+  simple_Rank <- atTag "Rank" >>> getChildren >>> getText -< entrezSimpleTaxon
+  returnA -< SimpleTaxon {
+    simpleTaxId = read simple_TaxId :: Int,
+    simpleScientificName = simple_ScientificName,
+    simpleParentTaxId = read simple_ParentTaxId :: Int,
+    simpleRank = read simple_Rank :: Rank
+    } 
 
 -- | Read entrez summary from internal haskell string
 readEntrezSummaries :: String -> [EntrezSummary]

@@ -46,6 +46,7 @@ data LineageTaxon = LineageTaxon
   ,  lineageRank :: Rank}
   deriving (Show, Eq)
 
+-- | Simplified data structure 
 data SimpleTaxon = SimpleTaxon
   {  simpleTaxId :: Int
   ,  simpleScientificName :: String

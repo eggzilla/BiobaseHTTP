@@ -5,6 +5,10 @@
 module Bio.EntrezHTTP (module Bio.EntrezHTTPData,
                        EntrezHTTPQuery(..),
                        entrezHTTP,
+                       readEntrezSimpleTaxons,
+                       getEntrezSimpleTaxons,
+                       readEntrezParentIds,
+                       getEntrezParentTaxIds,
                        readEntrezSummaries,
                        getEntrezSummaries,
                        getEntrezDocSums,
@@ -68,11 +72,11 @@ entrezHTTP (EntrezHTTPQuery program database query) = do
 
 -- | Read entrez fetch for taxonomy database into a simplyfied datatype 
 -- Result of e.g: http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=1406860
-readEntrezSimpleTaxon :: String -> [SimpleTaxon]
-readEntrezSimpleTaxon input = runLA (xreadDoc >>> getEntrezSimpleTaxon) input
+readEntrezSimpleTaxons :: String -> [SimpleTaxon]
+readEntrezSimpleTaxons input = runLA (xreadDoc >>> getEntrezSimpleTaxons) input
 
-getEntrezSimpleTaxon :: ArrowXml a => a XmlTree SimpleTaxon
-getEntrezSimpleTaxon = atTag "Taxon" >>>
+getEntrezSimpleTaxons :: ArrowXml a => a XmlTree SimpleTaxon
+getEntrezSimpleTaxons = getChildren >>> atTag "Taxon" >>>
   proc entrezSimpleTaxon -> do
   simple_TaxId <- atTag "TaxId" >>> getChildren >>> getText -< entrezSimpleTaxon
   simple_ScientificName <- atTag "ScientificName" >>> getChildren >>> getText -< entrezSimpleTaxon
@@ -84,6 +88,16 @@ getEntrezSimpleTaxon = atTag "Taxon" >>>
     simpleTaxonParentTaxId = read simple_ParentTaxId :: Int,
     simpleTaxonRank = read simple_Rank :: Rank
     } 
+
+readEntrezParentIds :: String -> [Int]
+readEntrezParentIds input = runLA (xreadDoc >>> getEntrezParentTaxIds) input
+
+getEntrezParentTaxIds :: ArrowXml a => a XmlTree Int
+getEntrezParentTaxIds = getChildren >>> atTag "Taxon" >>>
+  proc entrezSimpleTaxon -> do
+  simple_ParentTaxId <- atTag "ParentTaxId" >>> getChildren >>> getText -< entrezSimpleTaxon
+  returnA -< read simple_ParentTaxId :: Int
+    
 
 -- | Read entrez summary from internal haskell string
 readEntrezSummaries :: String -> [EntrezSummary]

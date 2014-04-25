@@ -9,8 +9,37 @@ import qualified Data.ByteString.Lazy.Char8 as B
 import Text.XML.HXT.Core
 import Bio.Core.Sequence 
 
-esummarytest :: IO ()
-esummarytest = do
+-- | gets all subtrees with the specified tag name
+atTag :: ArrowXml a =>  String -> a XmlTree XmlTree
+atTag tag = deep (isElem >>> hasName tag)
+
+efetchTaxonomyTest :: IO ()
+efetchTaxonomyTest = do
+  let program = Just "efetch"
+  let database = Just "taxonomy" 
+  let queryString = "id=1406860,1192838"
+  let entrezQuery = EntrezHTTPQuery program database queryString 
+  result <- entrezHTTP entrezQuery
+  let parentTaxIds = readEntrezParentIds result
+  --let parentTaxIds = map getEntrezParentTaxIds resulttaxons
+  --print result
+  print parentTaxIds
+
+efetchSequenceTest :: IO ()
+efetchSequenceTest = do
+  let program = Just "efetch"
+  let database = Just "nucleotide" 
+  let queryString = "id=556503834&seq_start=10&seq_stop=40&rettype=fasta"
+  let entrezQuery = EntrezHTTPQuery program database queryString 
+  result <- entrezHTTP entrezQuery
+  let parsedFasta = (mkSeqs . B.lines) (B.pack result)
+  --let summary = head (readEntrezSummaries result)
+  print (seqid (head (parsedFasta)))
+  --print (take 10 (drop 10 (toStr (seqdata (head (parsedFasta))))))
+  print (toStr (seqdata (head (parsedFasta))))
+
+esummaryTest :: IO ()
+esummaryTest = do
   let program = Just "esummary"
   let database = Just "nucleotide" 
   let queryString = "id=556503834"
@@ -26,18 +55,5 @@ esummarytest = do
   print summary
 
 main = do
-  let program = Just "efetch"
-  let database = Just "nucleotide" 
-  let queryString = "id=556503834&seq_start=10&seq_stop=40&rettype=fasta"
-  let entrezQuery = EntrezHTTPQuery program database queryString 
-  result <- entrezHTTP entrezQuery
-  let parsedFasta = (mkSeqs . B.lines) (B.pack result)
+  efetchTaxonomyTest
 
-  --let summary = head (readEntrezSummaries result)
-  print (seqid (head (parsedFasta)))
-  --print (take 10 (drop 10 (toStr (seqdata (head (parsedFasta))))))
-  print (toStr (seqdata (head (parsedFasta))))
-
--- | gets all subtrees with the specified tag name
-atTag :: ArrowXml a =>  String -> a XmlTree XmlTree
-atTag tag = deep (isElem >>> hasName tag)

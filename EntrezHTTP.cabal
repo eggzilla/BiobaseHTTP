@@ -37,6 +37,8 @@ library
   -- Modules included in this library but not exported.
   -- other-modules:       
   
+  -- compiler options: 
+  ghc-options:         -Wall -O2
   -- Other library packages from which modules are imported.
   build-depends:       base >=4.5 && <5, transformers, bytestring, conduit, HTTP, http-conduit, hxt, network, mtl, biocore, Taxonomy
   

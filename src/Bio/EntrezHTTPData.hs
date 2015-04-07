@@ -3,21 +3,23 @@
 module Bio.EntrezHTTPData where
 import Bio.TaxonomyData (Rank)
 
--- | Data structure for Entrez taxonomy fetch result
-data TaxaSet = TaxaSet
-  {  taxon :: Taxon 
-  } deriving (Show, Eq)
+data EntrezHTTPQuery = EntrezHTTPQuery 
+  { program :: Maybe String
+  , database :: Maybe String
+  , query :: String 
+  }
+  deriving (Show, Eq)
 
+-- | Data structure for Entrez taxonomy fetch result
 data Taxon = Taxon
   {  taxId :: Int
   ,  scientificName :: String
-  ,  otherNames :: TaxonName
   ,  parentTaxId :: Int
   ,  rank :: Rank
   ,  division :: String
   ,  geneticCode :: GeneticCode
   ,  mitoGeneticCode :: MitoGeneticCode
-  ,  lineage :: [String]
+  ,  lineage :: String
   ,  lineageEx :: [LineageTaxon]
   ,  createDate :: String
   ,  updateDate :: String

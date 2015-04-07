@@ -43,36 +43,43 @@ entrezHTTP (EntrezHTTPQuery program' database' query') = do
 -- | Read entrez fetch for taxonomy database into a simplyfied datatype 
 -- Result of e.g: http://eutils.ncbi.nlm.nih.
 readEntrezTaxonSet :: String -> [Taxon]
-readEntrezTaxonSet input = runLA (xreadDoc >>> parseEntrezTaxon) input
+readEntrezTaxonSet input = runLA (xreadDoc >>> parseEntrezTaxonSet) input
+
+
+parseEntrezTaxonSet :: ArrowXml a => a XmlTree Taxon
+parseEntrezTaxonSet = atTag "TaxaSet" >>> getChildren >>>
+  proc entrezTaxons -> do
+  _taxons <- parseEntrezTaxon -< entrezTaxons
+  returnA -< _taxons
 
 parseEntrezTaxon :: ArrowXml a => a XmlTree Taxon
-parseEntrezTaxon = getChildren >>> atTag "Taxon" >>>
+parseEntrezTaxon = (isElem >>> hasName "Taxon") >>> 
   proc entrezTaxon -> do
-  _taxId <- atTag "TaxId" >>> getChildren >>> getText -< entrezTaxon
-  _scientificName <- atTag "ScientificName" >>> getChildren >>> getText -< entrezTaxon
-  _parentTaxId <- atTag "ParentTaxId" >>> getChildren >>> getText -< entrezTaxon
-  _rank <- atTag "Rank" >>> getChildren >>> getText -< entrezTaxon
-  _divison <- atTag "Division" >>> getChildren >>> getText -< entrezTaxon
-  _geneticCode <- parseTaxonGeneticCode  -< entrezTaxon
-  _mitoGeneticCode  <- parseTaxonMitoGeneticCode -< entrezTaxon
-  _linage <- atTag "Linage" >>> getChildren >>> getText -< entrezTaxon
-  _linageEx <- parseTaxonLinageEx -< entrezTaxon
-  _createDate <- atTag "CreateDate" >>> getChildren >>> getText -< entrezTaxon
-  _updateDate <- atTag "UpdateDate" >>> getChildren >>> getText -< entrezTaxon
-  _pubDate <- atTag "PubDate" >>> getChildren >>> getText -< entrezTaxon
-  returnA -< Taxon {
-    taxId = read _taxId :: Int,
-    scientificName = _scientificName,
-    parentTaxId = read _parentTaxId :: Int,
-    rank = read _rank :: Rank,
-    division = _divison,
-    geneticCode = _geneticCode,
-    mitoGeneticCode = _mitoGeneticCode,
-    lineage = _linage,
-    lineageEx = _linageEx,
-    createDate = _createDate,
-    updateDate = _updateDate,
-    pubDate = _pubDate
+    _taxId <- getChildren >>> (isElem >>> hasName  "TaxId") >>> getChildren >>> getText -< entrezTaxon
+    _scientificName <- getChildren >>> (isElem >>> hasName "ScientificName") >>> getChildren >>> getText -< entrezTaxon
+    _parentTaxId <- getChildren >>> (isElem >>> hasName "ParentTaxId") >>> getChildren >>> getText -< entrezTaxon
+    _rank <- getChildren >>> (isElem >>> hasName "Rank") >>> getChildren >>> getText -< entrezTaxon
+    _divison <- getChildren >>> (isElem >>> hasName "Division") >>> getChildren >>> getText -< entrezTaxon
+    _geneticCode <- parseTaxonGeneticCode  -< entrezTaxon
+    _mitoGeneticCode  <- parseTaxonMitoGeneticCode -< entrezTaxon
+    _lineage <- getChildren >>> atTag "Lineage" >>> getChildren >>> getText -< entrezTaxon
+    _lineageEx <- parseTaxonLineageEx -< entrezTaxon
+    _createDate <- getChildren >>> (isElem >>> hasName "CreateDate") >>> getChildren >>> getText -< entrezTaxon
+    _updateDate <- getChildren >>> (isElem >>> hasName "UpdateDate") >>> getChildren >>> getText -< entrezTaxon
+    _pubDate <- getChildren >>> (isElem >>> hasName "PubDate") >>> getChildren >>> getText -< entrezTaxon
+    returnA -< Taxon {
+      taxId = read _taxId :: Int,
+      scientificName = _scientificName,
+      parentTaxId = read _parentTaxId :: Int,
+      rank = read _rank :: Rank,
+      division = _divison,
+      geneticCode = _geneticCode,
+      mitoGeneticCode = _mitoGeneticCode,
+      lineage = _lineage,
+      lineageEx = _lineageEx,
+      createDate = _createDate,
+      updateDate = _updateDate,
+      pubDate = _pubDate
     }
   
 parseTaxonGeneticCode :: ArrowXml a => a XmlTree GeneticCode
@@ -86,7 +93,7 @@ parseTaxonGeneticCode = getChildren >>> atTag "GeneticCode" >>>
     }
 
 parseTaxonMitoGeneticCode :: ArrowXml a => a XmlTree MitoGeneticCode
-parseTaxonMitoGeneticCode = getChildren >>> atTag "GeneticCode" >>>
+parseTaxonMitoGeneticCode = getChildren >>> atTag "MitoGeneticCode" >>>
   proc mitogeneticcode -> do
   _mgcId <- atTag "MGCId" >>> getChildren >>> getText -< mitogeneticcode
   _mgcName <- atTag "MGCName" >>> getChildren >>> getText -< mitogeneticcode
@@ -95,11 +102,11 @@ parseTaxonMitoGeneticCode = getChildren >>> atTag "GeneticCode" >>>
     mgcName = _mgcName
     }
 
-parseTaxonLinageEx :: ArrowXml a => a XmlTree [LineageTaxon]
-parseTaxonLinageEx = getChildren >>> atTag "LineageEx" >>>
-  proc linageEx -> do
-  _linageEx <- listA parseLineageTaxon -< linageEx
-  returnA -< _linageEx
+parseTaxonLineageEx :: ArrowXml a => a XmlTree [LineageTaxon]
+parseTaxonLineageEx = getChildren >>> atTag "LineageEx" >>>
+  proc lineageEx -> do
+  _lineageEx <- listA parseLineageTaxon -< lineageEx
+  returnA -< _lineageEx
 
 parseLineageTaxon :: ArrowXml a => a XmlTree LineageTaxon
 parseLineageTaxon = getChildren >>> atTag "Taxon" >>>

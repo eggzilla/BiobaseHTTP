@@ -45,7 +45,6 @@ entrezHTTP (EntrezHTTPQuery program' database' query') = do
 readEntrezTaxonSet :: String -> [Taxon]
 readEntrezTaxonSet input = runLA (xreadDoc >>> parseEntrezTaxonSet) input
 
-
 parseEntrezTaxonSet :: ArrowXml a => a XmlTree Taxon
 parseEntrezTaxonSet = atTag "TaxaSet" >>> getChildren >>>
   proc entrezTaxons -> do
@@ -55,9 +54,9 @@ parseEntrezTaxonSet = atTag "TaxaSet" >>> getChildren >>>
 parseEntrezTaxon :: ArrowXml a => a XmlTree Taxon
 parseEntrezTaxon = (isElem >>> hasName "Taxon") >>> 
   proc entrezTaxon -> do
-    _taxId <- getChildren >>> (isElem >>> hasName  "TaxId") >>> getChildren >>> getText -< entrezTaxon
+    _taxonomyId <- getChildren >>> (isElem >>> hasName  "TaxId") >>> getChildren >>> getText -< entrezTaxon
     _scientificName <- getChildren >>> (isElem >>> hasName "ScientificName") >>> getChildren >>> getText -< entrezTaxon
-    _parentTaxId <- getChildren >>> (isElem >>> hasName "ParentTaxId") >>> getChildren >>> getText -< entrezTaxon
+    _parentTaxonomyId <- getChildren >>> (isElem >>> hasName "ParentTaxId") >>> getChildren >>> getText -< entrezTaxon
     _rank <- getChildren >>> (isElem >>> hasName "Rank") >>> getChildren >>> getText -< entrezTaxon
     _divison <- getChildren >>> (isElem >>> hasName "Division") >>> getChildren >>> getText -< entrezTaxon
     _geneticCode <- parseTaxonGeneticCode  -< entrezTaxon
@@ -68,9 +67,9 @@ parseEntrezTaxon = (isElem >>> hasName "Taxon") >>>
     _updateDate <- getChildren >>> (isElem >>> hasName "UpdateDate") >>> getChildren >>> getText -< entrezTaxon
     _pubDate <- getChildren >>> (isElem >>> hasName "PubDate") >>> getChildren >>> getText -< entrezTaxon
     returnA -< Taxon {
-      taxId = read _taxId :: Int,
+      taxonomyId = read _taxonomyId :: Int,
       scientificName = _scientificName,
-      parentTaxId = read _parentTaxId :: Int,
+      parentTaxonomyId = read _parentTaxonomyId :: Int,
       rank = read _rank :: Rank,
       division = _divison,
       geneticCode = _geneticCode,

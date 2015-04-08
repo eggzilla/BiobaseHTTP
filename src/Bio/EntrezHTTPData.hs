@@ -12,9 +12,9 @@ data EntrezHTTPQuery = EntrezHTTPQuery
 
 -- | Data structure for Entrez taxonomy fetch result
 data Taxon = Taxon
-  {  taxId :: Int
+  {  taxonomyId :: Int
   ,  scientificName :: String
-  ,  parentTaxId :: Int
+  ,  parentTaxonomyId :: Int
   ,  rank :: Rank
   ,  division :: String
   ,  geneticCode :: GeneticCode

@@ -103,8 +103,8 @@ parseTaxonMitoGeneticCode = getChildren >>> atTag "MitoGeneticCode" >>>
 
 parseTaxonLineageEx :: ArrowXml a => a XmlTree [LineageTaxon]
 parseTaxonLineageEx = getChildren >>> atTag "LineageEx" >>>
-  proc lineageEx -> do
-  _lineageEx <- listA parseLineageTaxon -< lineageEx
+  proc taxonLineageEx -> do
+  _lineageEx <- listA parseLineageTaxon -< taxonLineageEx
   returnA -< _lineageEx
 
 parseLineageTaxon :: ArrowXml a => a XmlTree LineageTaxon

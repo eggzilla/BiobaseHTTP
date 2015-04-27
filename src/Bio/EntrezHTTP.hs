@@ -17,7 +17,7 @@ import Text.XML.HXT.Core
 import Network
 import Data.Maybe
 import Bio.EntrezHTTPData
-import Bio.TaxonomyData (Rank)
+import Bio.TaxonomyData --(Rank,SimpleTaxon)
       
 -- | Send query and parse return XML 
 startSession :: String -> String -> String -> IO String
@@ -67,10 +67,10 @@ parseEntrezTaxon = (isElem >>> hasName "Taxon") >>>
     _updateDate <- getChildren >>> (isElem >>> hasName "UpdateDate") >>> getChildren >>> getText -< entrezTaxon
     _pubDate <- getChildren >>> (isElem >>> hasName "PubDate") >>> getChildren >>> getText -< entrezTaxon
     returnA -< Taxon {
-      taxonomyId = read _taxonomyId :: Int,
-      scientificName = _scientificName,
-      parentTaxonomyId = read _parentTaxonomyId :: Int,
-      rank = read _rank :: Rank,
+      taxonTaxId = read _taxonomyId :: Int,
+      taxonScientificName = _scientificName,
+      taxonParentTaxId = read _parentTaxonomyId :: Int,
+      taxonRank = read _rank :: Rank,
       division = _divison,
       geneticCode = _geneticCode,
       mitoGeneticCode = _mitoGeneticCode,
@@ -81,24 +81,30 @@ parseEntrezTaxon = (isElem >>> hasName "Taxon") >>>
       pubDate = _pubDate
     }
   
-parseTaxonGeneticCode :: ArrowXml a => a XmlTree GeneticCode
+parseTaxonGeneticCode :: ArrowXml a => a XmlTree TaxGenCode
 parseTaxonGeneticCode = getChildren >>> atTag "GeneticCode" >>>
   proc geneticcode -> do
   _gcId <- atTag "GCId" >>> getChildren >>> getText -< geneticcode
   _gcName <- atTag "GCName" >>> getChildren >>> getText -< geneticcode
-  returnA -< GeneticCode {
-    gcId = read _gcId :: Int,
-    gcName = _gcName
+  returnA -< TaxGenCode {
+    geneticCodeId = read _gcId :: Int,
+    abbreviation = Nothing,
+    geneCodeName = _gcName,
+    cde = [],
+    starts = []      
     }
 
-parseTaxonMitoGeneticCode :: ArrowXml a => a XmlTree MitoGeneticCode
+parseTaxonMitoGeneticCode :: ArrowXml a => a XmlTree TaxGenCode
 parseTaxonMitoGeneticCode = getChildren >>> atTag "MitoGeneticCode" >>>
   proc mitogeneticcode -> do
   _mgcId <- atTag "MGCId" >>> getChildren >>> getText -< mitogeneticcode
   _mgcName <- atTag "MGCName" >>> getChildren >>> getText -< mitogeneticcode
-  returnA -< MitoGeneticCode {
-    mgcId = read _mgcId :: Int,
-    mgcName = _mgcName
+  returnA -< TaxGenCode {
+    geneticCodeId = read _mgcId :: Int,
+    abbreviation = Nothing,
+    geneCodeName = _mgcName,
+    cde = [],
+    starts = []
     }
 
 parseTaxonLineageEx :: ArrowXml a => a XmlTree [LineageTaxon]
@@ -132,10 +138,10 @@ parseEntrezSimpleTaxons = getChildren >>> atTag "Taxon" >>>
   simple_ParentTaxId <- atTag "ParentTaxId" >>> getChildren >>> getText -< entrezSimpleTaxon
   simple_Rank <- atTag "Rank" >>> getChildren >>> getText -< entrezSimpleTaxon
   returnA -< SimpleTaxon {
-    simpleTaxonTaxId = read simple_TaxId :: Int,
-    simpleTaxonScientificName = simple_ScientificName,
-    simpleTaxonParentTaxId = read simple_ParentTaxId :: Int,
-    simpleTaxonRank = read simple_Rank :: Rank
+    simpleTaxId = read simple_TaxId :: Int,
+    simpleScientificName = simple_ScientificName,
+    simpleParentTaxId = read simple_ParentTaxId :: Int,
+    simpleRank = read simple_Rank :: Rank
     } 
 
 readEntrezParentIds :: String -> [Int]

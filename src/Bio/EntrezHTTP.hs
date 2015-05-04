@@ -5,6 +5,8 @@
 module Bio.EntrezHTTP (module Bio.EntrezHTTPData,
                        EntrezHTTPQuery(..),
                        entrezHTTP,
+                       retrieveElementsEntrez,
+                       portionListElements,                     
                        readEntrezTaxonSet,
                        readEntrezSimpleTaxons,
                        readEntrezParentIds,
@@ -39,6 +41,20 @@ entrezHTTP (EntrezHTTPQuery program' database' query') = do
   let selectedProgram = fromMaybe defaultProgram program'
   let selectedDatabase = fromMaybe defaultDatabase database'  
   startSession selectedProgram selectedDatabase query'
+
+-- | Wrapper functions that ensures that only 20 queries are sent per request
+retrieveElementsEntrez :: [a] -> ([a] -> IO b) -> IO [b]
+retrieveElementsEntrez listElements retrievalfunction = do
+  let splits = portionListElements listElements 20
+  entrezOutput <- mapM retrievalfunction splits
+  return entrezOutput
+
+portionListElements :: [a] -> Int -> [[a]]
+portionListElements listElements elementsPerSplit
+  | not (null listElements) = filter (\e ->not (null e)) result
+  | otherwise = []
+  where (heads,xs) = splitAt elementsPerSplit listElements
+        result = (heads:(portionListElements xs elementsPerSplit))
 
 -- | Read entrez fetch for taxonomy database into a simplyfied datatype 
 -- Result of e.g: http://eutils.ncbi.nlm.nih.

@@ -1,7 +1,6 @@
 -- | Data structures for Entrez HTTP queries
 
 module Bio.EntrezHTTPData where
-import Bio.TaxonomyData
 
 data EntrezHTTPQuery = EntrezHTTPQuery 
   { program :: Maybe String

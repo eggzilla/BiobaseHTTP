@@ -1,7 +1,7 @@
 EntrezHTTP
+[![Hackage](https://img.shields.io/hackage/v/EntrezHTTP.svg)](https://hackage.haskell.org/package/EntrezHTTP) [![Build Status](https://travis-ci.org/eggzilla/EntrezHTTP.svg?branch=master)](https://travis-ci.org/eggzilla/EntrezHTTP)
 =========
 
-Interface for the NCBI Entrez REST webservice - haskell cabal libary
-Changes:
-Version 1.0.0:
-Initial version
+EntrezHTTP is a haskell cabal libary, providing libary functions to interface for the NCBI Entrez REST webservice.
+
+

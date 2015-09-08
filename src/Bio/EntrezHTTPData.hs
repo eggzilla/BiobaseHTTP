@@ -25,6 +25,30 @@ data SummaryItem = SummaryItem
   , itemContent :: String}
   deriving (Show, Eq)
 
+-- | Gene doc summary
+data EntrezGeneSummary = EntrezGeneSummary
+  {  geneSummaries :: [EntrezGeneDocSummary]}
+  deriving (Show, Eq)
+
+data EntrezGeneDocSummary = EntrezGeneDocSummary
+  { geneId :: String
+  , geneName :: String
+  , geneStatus :: String
+  , geneCurrentID :: String
+  , geneGeneticSource :: String
+  , geneOtherAliases :: String
+  , geneGenomicInfo :: EntrezGenomicInfo}
+  deriving (Show, Eq)
+
+data EntrezGenomicInfo = EntrezGenomicInfo
+  { chrAccVer :: String
+  , chrStart :: Int
+  , chrStop :: Int
+  , exonCount :: Int
+  }
+  deriving (Show, Eq)
+
+
 -- | Data structure for Entrez search result
 data EntrezSearch = EntrezSearch
   { count :: Int

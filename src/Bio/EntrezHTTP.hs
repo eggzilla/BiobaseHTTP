@@ -23,6 +23,7 @@ import Data.Maybe
 import Bio.EntrezHTTPData
 import Bio.TaxonomyData --(Rank,SimpleTaxon)
 import qualified Data.ByteString.Char8 as B
+import Network.HTTP.Base
       
 -- | Send query and parse return XML 
 startSession :: String -> String -> String -> IO String
@@ -275,6 +276,55 @@ parseTermSet = atTag "TermSet" >>>
     explode = _explode
     } 
 
+-- | Read entrez summary from internal haskell string
+readEntrezGeneSummaries :: String -> [EntrezGeneSummary]
+readEntrezGeneSummaries input = runLA (xreadDoc >>> parseEntrezGeneSummaries) input
+
+-- | Parse entrez summary result
+parseEntrezGeneSummaries :: ArrowXml a => a XmlTree EntrezGeneSummary
+parseEntrezGeneSummaries = atTag "eSummaryResult" >>> getChildren >>> atTag "DocumentSummarySet" >>>
+  proc entrezSummary -> do
+  _geneSummaries <- listA parseEntrezGeneDocSums -< entrezSummary
+  returnA -< EntrezGeneSummary {
+    geneSummaries = _geneSummaries
+    }     
+
+-- | 
+parseEntrezGeneDocSums :: ArrowXml a => a XmlTree EntrezGeneDocSummary
+parseEntrezGeneDocSums = atTag "DocumentSummary" >>> 
+  proc entrezDocSum -> do
+  _geneId <- atTag "Name" >>> getChildren >>> getText -< entrezDocSum
+  _geneName <- atTag "Description" >>> getChildren >>> getText -< entrezDocSum
+  _geneStatus <- atTag "Status" >>> getChildren >>> getText -< entrezDocSum
+  _geneCurrentID <- atTag "CurrentID" >>> getChildren >>> getText -< entrezDocSum
+  _geneGeneticSource <- atTag "GeneticSource" >>> getChildren >>> getText -< entrezDocSum
+  _geneOtherAliases <- atTag "OtherAliases" >>> getChildren >>> getText -< entrezDocSum
+  _geneGenomicInfo <- parseEntrezGenomicInfo -< entrezDocSum
+  returnA -< EntrezGeneDocSummary {
+    geneId = _geneId,
+    geneName = _geneName,
+    geneStatus = _geneStatus,
+    geneCurrentID = _geneCurrentID,
+    geneGeneticSource = _geneGeneticSource,
+    geneOtherAliases = _geneOtherAliases,
+    geneGenomicInfo = _geneGenomicInfo
+    } 
+
+parseEntrezGenomicInfo :: ArrowXml a => a XmlTree EntrezGenomicInfo
+parseEntrezGenomicInfo = atTag "GenomicInfo" >>> getChildren >>> atTag "GenomicInfoType" >>>
+  proc entrezGenomicInfo -> do
+  _chrAccVer <- atTag "ChrAccVer" >>> getChildren >>> getText -< entrezGenomicInfo
+  _chrStart <- atTag "ChrStart" >>> getChildren >>> getText -< entrezGenomicInfo
+  _chrStop <- atTag "ChrStop" >>> getChildren >>> getText -< entrezGenomicInfo
+  _exonCount <- atTag "ExonCount" >>> getChildren >>> getText -< entrezGenomicInfo
+  returnA -< EntrezGenomicInfo {
+    chrAccVer = _chrAccVer,
+    chrStart  = readInt _chrStart,
+    chrStop = readInt _chrStop,
+    exonCount = readInt _exonCount
+    } 
+
+
 -- | gets all subtrees with the specified tag name
 atTag :: ArrowXml a =>  String -> a XmlTree XmlTree
 atTag tag = deep (isElem >>> hasName tag)
@@ -282,12 +332,29 @@ atTag tag = deep (isElem >>> hasName tag)
 -- retrieval functions
 
 -- | Retrieve sequence for gene symbol (e.g. yhfA) from accession number (e.g. NC_000913.3)
-retrieveGeneSymbolFasta :: String -> String -> IO Int
+retrieveGeneSymbolFasta :: String -> String -> IO String
 retrieveGeneSymbolFasta genesymbol accession = do
-  let query1 = EntrezHTTPQuery (Just "esearch") (Just "gene") ("term=%28" ++ genesymbol ++ "[Gene%20Name]%29%20AND%20" ++ accession ++ "[Nucleotide%20Accession]")
+  let query1 = EntrezHTTPQuery (Just "esearch") (Just "gene") (("term=" ++ genesymbol) ++ (urlEncode ("[Gene Name] AND " ++ accession ++ "[Nucleotide Accession]")))
+  --print query1
   uniqueidresponse <- entrezHTTP query1
+  --print uniqueidresponse
   let uniqueid = head (searchIds (head (readEntrezSearch uniqueidresponse)))
-  return uniqueid
+  let query2 = EntrezHTTPQuery (Just "esummary") (Just "gene") ("id=" ++ show uniqueid)
+  summaryresponse <- entrezHTTP query2
+  --print summaryresponse
+  let parsedSummary = head (geneSummaries (head (readEntrezGeneSummaries summaryresponse)))
+  let accession = chrAccVer (geneGenomicInfo parsedSummary)
+  let seqStart = chrStart (geneGenomicInfo parsedSummary)
+  let seqStop = chrStop (geneGenomicInfo parsedSummary)
+  let strand = show (setStrand seqStart seqStop)
+  let query3 = EntrezHTTPQuery (Just "efetch") (Just "nucleotide") ("id=" ++ accession ++ "&strand=" ++ strand ++ "&seq_start=" ++ show seqStart ++ "&seq_stop=" ++ show seqStop ++ "&rettype=fasta")
+  fastaresponse <- entrezHTTP query3
+  return fastaresponse
+
+setStrand :: Int -> Int -> Int
+setStrand start end
+  | start <= end = 1
+  | otherwise = 2
 
 readInt :: String -> Int
 readInt = read

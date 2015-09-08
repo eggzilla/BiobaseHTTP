@@ -30,5 +30,19 @@ data EntrezSearch = EntrezSearch
   { count :: Int
   , retMax :: Int
   , retStart :: Int
-  , resultIds :: [Int]}
+  , searchIds :: [Int]
+  , translationStack :: [TranslationStack]
+  , queryTranslation :: String}
+  deriving (Show, Eq)
+
+data TranslationStack = TranslationStack
+  { termSets :: [TermSet]
+  , operation :: String}
+  deriving (Show, Eq)
+
+data TermSet = TermSet
+  { term :: String
+  , field :: String
+  , termCount :: Int
+  , explode :: String}
   deriving (Show, Eq)

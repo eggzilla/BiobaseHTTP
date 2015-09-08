@@ -11,6 +11,8 @@ module Bio.EntrezHTTP (module Bio.EntrezHTTPData,
                        readEntrezSimpleTaxons,
                        readEntrezParentIds,
                        readEntrezSummaries,
+                       readEntrezSearch,
+                       retrieveGeneSymbolFasta
                       ) where
 
 import Network.HTTP.Conduit    
@@ -56,6 +58,9 @@ portionListElements listElements elementsPerSplit
   | otherwise = []
   where (heads,xs) = splitAt elementsPerSplit listElements
         result = (heads:(portionListElements xs elementsPerSplit))
+
+
+-- Parsing functions
 
 -- | Read entrez fetch for taxonomy database into a simplyfied datatype 
 -- Result of e.g: http://eutils.ncbi.nlm.nih.
@@ -207,6 +212,82 @@ parseSummaryItems = atTag "Item" >>>
     itemContent = item_Content
     } 
 
+-- | Read entrez summary from internal haskell string
+readEntrezSearch :: String -> [EntrezSearch]
+readEntrezSearch input = runLA (xreadDoc >>> parseEntrezSearch) input
+
+-- | Parse entrez search result
+parseEntrezSearch :: ArrowXml a => a XmlTree EntrezSearch
+parseEntrezSearch = atTag "eSearchResult" >>> 
+  proc entrezSearch -> do
+  _count <- atTag "Count" >>> getChildren >>> getText -< entrezSearch
+  _retMax <- atTag "RetMax" >>> getChildren >>> getText -< entrezSearch
+  _retStart <- atTag "RetStart" >>> getChildren >>> getText -< entrezSearch
+  _searchIds <- atTag "IdList" >>> listA parseSearchId -< entrezSearch
+  _translationStack <- listA parseTranslationStack -< entrezSearch
+  _queryTranslation <- atTag "QueryTranslation" >>> getChildren >>> getText -< entrezSearch
+  returnA -< EntrezSearch {
+    count = (readInt _count),
+    retMax = (readInt _retMax),
+    retStart = (readInt _retStart),
+    searchIds = _searchIds,
+    translationStack = _translationStack,
+    queryTranslation = _queryTranslation
+    }     
+
+-- | Parse entrez TranslationStack
+parseSearchIds :: ArrowXml a => a XmlTree [Int]
+parseSearchIds = atTag "IdList" >>> 
+  proc entrezSearchIds -> do
+  _searchIds <- listA parseSearchId -< entrezSearchIds
+  returnA -< _searchIds
+
+-- | Parse entrez TranslationStack
+parseSearchId :: ArrowXml a => a XmlTree Int
+parseSearchId = atTag "Id" >>> 
+  proc entrezSearchId -> do
+  searchId <- getChildren >>> getText -< entrezSearchId
+  returnA -< (readInt searchId)
+
+-- | Parse entrez TranslationStack
+parseTranslationStack :: ArrowXml a => a XmlTree TranslationStack
+parseTranslationStack = atTag "TranslationStack" >>> 
+  proc entrezTranslationStack -> do
+  _termSets <- listA parseTermSet -< entrezTranslationStack
+  _operation <- atTag "OP" >>> getChildren >>> getText -< entrezTranslationStack
+  returnA -< TranslationStack {
+    termSets = _termSets,
+    operation = _operation
+    } 
+
+-- | Parse entrez TermSet 
+parseTermSet :: ArrowXml a => a XmlTree TermSet
+parseTermSet = atTag "TermSet" >>> 
+  proc entrezTermSet -> do
+  _term <- atTag "Term" >>> getChildren >>> getText -< entrezTermSet
+  _field <- atTag "Field" >>> getChildren >>> getText -< entrezTermSet
+  _termCount <- atTag "Count" >>> getChildren >>> getText -< entrezTermSet
+  _explode <- atTag "Explode" >>> getChildren >>> getText -< entrezTermSet
+  returnA -< TermSet {
+    term = _term,
+    field = _field,
+    termCount = readInt _termCount,
+    explode = _explode
+    } 
+
 -- | gets all subtrees with the specified tag name
 atTag :: ArrowXml a =>  String -> a XmlTree XmlTree
 atTag tag = deep (isElem >>> hasName tag)
+
+-- retrieval functions
+
+-- | Retrieve sequence for gene symbol (e.g. yhfA) from accession number (e.g. NC_000913.3)
+retrieveGeneSymbolFasta :: String -> String -> IO Int
+retrieveGeneSymbolFasta genesymbol accession = do
+  let query1 = EntrezHTTPQuery (Just "esearch") (Just "gene") ("term=%28" ++ genesymbol ++ "[Gene%20Name]%29%20AND%20" ++ accession ++ "[Nucleotide%20Accession]")
+  uniqueidresponse <- entrezHTTP query1
+  let uniqueid = head (searchIds (head (readEntrezSearch uniqueidresponse)))
+  return uniqueid
+
+readInt :: String -> Int
+readInt = read

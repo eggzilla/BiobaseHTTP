@@ -8,8 +8,16 @@ name:                EntrezHTTP
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
 version:             1.0.0
-synopsis:            Libary to interface with the NCBI entrez
-description:         Libary to interface with NCBI entrez
+synopsis:            Libary to interface with the NCBI Entrez REST service.
+description:         EntrezHTTP provides functions to query the NCBI entrez REST interface.
+		     There are multiple different databases and tools, so called eutils,
+		     provided by the service.
+                     For more information on Entrez refer to: <http://www.ncbi.nlm.nih.gov/gquery/>.
+                     .
+                     Information on the webservice can be found at: <http://www.ncbi.nlm.nih.gov/books/NBK25497/>.
+                     .
+                     If you plan to include the library in a tool, register it as explained <http://www.ncbi.nlm.nih.gov/books/NBK25497/#chapter2.Usage_Guidelines_and_Requiremen here>.
+                     
 license:             GPL-3
 license-file:        LICENSE
 author:              Florian Eggenhofer

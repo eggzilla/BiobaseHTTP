@@ -10,17 +10,20 @@
 -- and register your tool at eutilities@ncbi.nlm.nih.gov. You can append your registration info generated
 -- with the included buildRegistration function to your query.
 
-module Bio.EntrezHTTP (module Bio.EntrezHTTPData,
-                       EntrezHTTPQuery(..),
+module Bio.EntrezHTTP (-- * Datatypes
+                       module Bio.EntrezHTTPData,
+		       -- * Retrieval function
                        entrezHTTP,
                        retrieveElementsEntrez,
-                       portionListElements,                     
+                       portionListElements,
+                       -- * Parsing functions
                        readEntrezTaxonSet,
                        readEntrezSimpleTaxons,
                        readEntrezParentIds,
                        readEntrezSummaries,
                        readEntrezSearch,
                        retrieveGeneSymbolFasta,
+		       -- * auxiliary functions
                        buildRegistration
                       ) where
 
@@ -57,13 +60,14 @@ entrezHTTP (EntrezHTTPQuery program' database' query') = do
   let selectedDatabase = fromMaybe defaultDatabase database'  
   startSession selectedProgram selectedDatabase query'
 
--- | Wrapper functions that ensures that only 20 queries are sent per request
+-- | Wrapper function for eutils that accept a list of querys (e.g. a list of gene ids) that ensures that only chunks of 20 queries are sent per request. Sending to long queries otherwise results in a serverside exception.
 retrieveElementsEntrez :: [a] -> ([a] -> IO b) -> IO [b]
 retrieveElementsEntrez listElements retrievalfunction = do
   let splits = portionListElements listElements 20
   entrezOutput <- mapM retrievalfunction splits
   return entrezOutput
 
+-- Auxiliary function for retrieveElementsEntrez 
 portionListElements :: [a] -> Int -> [[a]]
 portionListElements listElements elementsPerSplit
   | not (null listElements) = filter (\e ->not (null e)) result
@@ -71,6 +75,7 @@ portionListElements listElements elementsPerSplit
   where (heads,xs) = splitAt elementsPerSplit listElements
         result = (heads:(portionListElements xs elementsPerSplit))
 
+---------------------------------------
 -- Parsing functions
 
 -- | Read entrez fetch for taxonomy database into a simplyfied datatype 
@@ -332,7 +337,8 @@ parseEntrezGenomicInfo = atTag "GenomicInfo" >>> getChildren >>> atTag "GenomicI
 atTag :: ArrowXml a =>  String -> a XmlTree XmlTree
 atTag tag = deep (isElem >>> hasName tag)
 
--- retrieval functions
+---------------------------------------
+-- Retrieval functions
 
 -- | Retrieve sequence for gene symbol (e.g. yhfA) from accession number (e.g. NC_000913.3)
 retrieveGeneSymbolFasta :: String -> String -> IO String

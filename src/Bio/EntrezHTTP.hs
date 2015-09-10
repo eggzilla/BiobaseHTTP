@@ -2,6 +2,14 @@
 {-# LANGUAGE Arrows #-}
 
 -- | Interface for the NCBI Entrez REST webservice
+-- The entrezHTTP function provides a interface to the NCBI Entrez REST service.
+-- A series of different eutilites () and databases are provided by the REST interface.
+-- Response depends on the combination of eutil and database, as well requested returntype.
+-- Parsers for specific combinations are included.
+-- If you use this libary in a tool, please read <http://www.ncbi.nlm.nih.gov/books/NBK25497/ A General Introduction to the E-utilities> carefully
+-- and register your tool at eutilities@ncbi.nlm.nih.gov. You can append your registration info generated
+-- with the included buildRegistration function to your query.
+
 module Bio.EntrezHTTP (module Bio.EntrezHTTPData,
                        EntrezHTTPQuery(..),
                        entrezHTTP,
@@ -12,7 +20,8 @@ module Bio.EntrezHTTP (module Bio.EntrezHTTPData,
                        readEntrezParentIds,
                        readEntrezSummaries,
                        readEntrezSearch,
-                       retrieveGeneSymbolFasta
+                       retrieveGeneSymbolFasta,
+                       buildRegistration
                       ) where
 
 import Network.HTTP.Conduit    
@@ -37,7 +46,9 @@ startSession program' database' query' = do
 sendQuery :: String -> String -> String -> IO L8.ByteString
 sendQuery program' database' query' = simpleHttp ("http://eutils.ncbi.nlm.nih.gov/entrez/eutils/"++ program' ++ ".fcgi?" ++ "db=" ++ database' ++ "&" ++ query')         
 
--- |
+-- | Function for querying the NCBI entrez REST interface. Input EntrezHTTPQuery datatype is used to select database, program of interest and contains the query string.
+--   Please note that query strings containing whitespace or special characters need to be urlencoded. The response format and content depends on the query type, the output
+-- therefore provided as String.
 entrezHTTP :: EntrezHTTPQuery -> IO String
 entrezHTTP (EntrezHTTPQuery program' database' query') = do
   let defaultProgram = "summary"
@@ -59,7 +70,6 @@ portionListElements listElements elementsPerSplit
   | otherwise = []
   where (heads,xs) = splitAt elementsPerSplit listElements
         result = (heads:(portionListElements xs elementsPerSplit))
-
 
 -- Parsing functions
 
@@ -237,13 +247,6 @@ parseEntrezSearch = atTag "eSearchResult" >>>
     }     
 
 -- | Parse entrez TranslationStack
-parseSearchIds :: ArrowXml a => a XmlTree [Int]
-parseSearchIds = atTag "IdList" >>> 
-  proc entrezSearchIds -> do
-  _searchIds <- listA parseSearchId -< entrezSearchIds
-  returnA -< _searchIds
-
--- | Parse entrez TranslationStack
 parseSearchId :: ArrowXml a => a XmlTree Int
 parseSearchId = atTag "Id" >>> 
   proc entrezSearchId -> do
@@ -343,13 +346,16 @@ retrieveGeneSymbolFasta genesymbol accession = do
   summaryresponse <- entrezHTTP query2
   --print summaryresponse
   let parsedSummary = head (geneSummaries (head (readEntrezGeneSummaries summaryresponse)))
-  let accession = chrAccVer (geneGenomicInfo parsedSummary)
+  let accessionVersion = chrAccVer (geneGenomicInfo parsedSummary)
   let seqStart = chrStart (geneGenomicInfo parsedSummary)
   let seqStop = chrStop (geneGenomicInfo parsedSummary)
   let strand = show (setStrand seqStart seqStop)
-  let query3 = EntrezHTTPQuery (Just "efetch") (Just "nucleotide") ("id=" ++ accession ++ "&strand=" ++ strand ++ "&seq_start=" ++ show seqStart ++ "&seq_stop=" ++ show seqStop ++ "&rettype=fasta")
+  let query3 = EntrezHTTPQuery (Just "efetch") (Just "nucleotide") ("id=" ++ accessionVersion ++ "&strand=" ++ strand ++ "&seq_start=" ++ show seqStart ++ "&seq_stop=" ++ show seqStop ++ "&rettype=fasta")
   fastaresponse <- entrezHTTP query3
   return fastaresponse
+
+--retrieveNucleotideFasta
+
 
 setStrand :: Int -> Int -> Int
 setStrand start end
@@ -358,3 +364,7 @@ setStrand start end
 
 readInt :: String -> Int
 readInt = read
+
+-- | 
+buildRegistration :: String -> String -> String
+buildRegistration toolname developeremail = "&tool=" ++ toolname ++ "&email=" ++ developeremail

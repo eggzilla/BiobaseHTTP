@@ -76,16 +76,15 @@ entrezHTTP (EntrezHTTPQuery program' database' query') = do
 retrieveElementsEntrez :: [a] -> ([a] -> IO b) -> IO [b]
 retrieveElementsEntrez listElements retrievalfunction = do
   let splits = portionListElements listElements 20
-  entrezOutput <- mapM retrievalfunction splits
-  return entrezOutput
+  mapM retrievalfunction splits
 
 -- Auxiliary function for retrieveElementsEntrez 
 portionListElements :: [a] -> Int -> [[a]]
 portionListElements listElements elementsPerSplit
-  | not (null listElements) = filter (\e ->not (null e)) result
+  | not (null listElements) = filter (not . null) result
   | otherwise = []
   where (heads,xs) = splitAt elementsPerSplit listElements
-        result = (heads:(portionListElements xs elementsPerSplit))
+        result = heads:portionListElements xs elementsPerSplit
 
 ---------------------------------------
 -- Parsing functions
@@ -93,7 +92,7 @@ portionListElements listElements elementsPerSplit
 -- | Read entrez fetch for taxonomy database into a simplyfied datatype 
 -- Result of e.g: http://eutils.ncbi.nlm.nih.
 readEntrezTaxonSet :: String -> [Taxon]
-readEntrezTaxonSet input = runLA (xreadDoc >>> parseEntrezTaxonSet) input
+readEntrezTaxonSet = runLA (xreadDoc >>> parseEntrezTaxonSet)
 
 parseEntrezTaxonSet :: ArrowXml a => a XmlTree Taxon
 parseEntrezTaxonSet = atTag "TaxaSet" >>> getChildren >>>
@@ -178,7 +177,7 @@ parseLineageTaxon = getChildren >>> atTag "Taxon" >>>
 -- | Read entrez fetch for taxonomy database into a simplyfied datatype 
 -- Result of e.g: http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=1406860
 readEntrezSimpleTaxons :: String -> [SimpleTaxon]
-readEntrezSimpleTaxons input = runLA (xreadDoc >>> parseEntrezSimpleTaxons) input
+readEntrezSimpleTaxons = runLA (xreadDoc >>> parseEntrezSimpleTaxons)
 
 parseEntrezSimpleTaxons :: ArrowXml a => a XmlTree SimpleTaxon
 parseEntrezSimpleTaxons = getChildren >>> atTag "Taxon" >>>
@@ -189,13 +188,13 @@ parseEntrezSimpleTaxons = getChildren >>> atTag "Taxon" >>>
   simple_Rank <- atTag "Rank" >>> getChildren >>> getText -< entrezSimpleTaxon
   returnA -< SimpleTaxon {
     simpleTaxId = read simple_TaxId :: Int,
-    simpleScientificName = (B.pack simple_ScientificName),
+    simpleScientificName = B.pack simple_ScientificName,
     simpleParentTaxId = read simple_ParentTaxId :: Int,
     simpleRank = read simple_Rank :: Rank
     } 
 
 readEntrezParentIds :: String -> [Int]
-readEntrezParentIds input = runLA (xreadDoc >>> parseEntrezParentTaxIds) input
+readEntrezParentIds = runLA (xreadDoc >>> parseEntrezParentTaxIds)
 
 parseEntrezParentTaxIds :: ArrowXml a => a XmlTree Int
 parseEntrezParentTaxIds = getChildren >>> atTag "Taxon" >>>
@@ -205,7 +204,7 @@ parseEntrezParentTaxIds = getChildren >>> atTag "Taxon" >>>
     
 -- | Read entrez summary from internal haskell string
 readEntrezSummaries :: String -> [EntrezSummary]
-readEntrezSummaries input = runLA (xreadDoc >>> parseEntrezSummaries) input
+readEntrezSummaries = runLA (xreadDoc >>> parseEntrezSummaries)
 
 -- | Parse entrez summary result
 parseEntrezSummaries :: ArrowXml a => a XmlTree EntrezSummary
@@ -242,7 +241,7 @@ parseSummaryItems = atTag "Item" >>>
 
 -- | Read entrez summary from internal haskell string
 readEntrezSearch :: String -> [EntrezSearch]
-readEntrezSearch input = runLA (xreadDoc >>> parseEntrezSearch) input
+readEntrezSearch = runLA (xreadDoc >>> parseEntrezSearch)
 
 -- | Parse entrez search result
 parseEntrezSearch :: ArrowXml a => a XmlTree EntrezSearch
@@ -255,9 +254,9 @@ parseEntrezSearch = atTag "eSearchResult" >>>
   _translationStack <- listA parseTranslationStack -< entrezSearch
   _queryTranslation <- atTag "QueryTranslation" >>> getChildren >>> getText -< entrezSearch
   returnA -< EntrezSearch {
-    count = (readInt _count),
-    retMax = (readInt _retMax),
-    retStart = (readInt _retStart),
+    count = readInt _count,
+    retMax = readInt _retMax,
+    retStart = readInt _retStart,
     searchIds = _searchIds,
     translationStack = _translationStack,
     queryTranslation = _queryTranslation
@@ -298,7 +297,7 @@ parseTermSet = atTag "TermSet" >>>
 
 -- | Read entrez summary from internal haskell string
 readEntrezGeneSummaries :: String -> [EntrezGeneSummary]
-readEntrezGeneSummaries input = runLA (xreadDoc >>> parseEntrezGeneSummaries) input
+readEntrezGeneSummaries = runLA (xreadDoc >>> parseEntrezGeneSummaries)
 
 -- | Parse entrez summary result
 parseEntrezGeneSummaries :: ArrowXml a => a XmlTree EntrezGeneSummary
@@ -355,7 +354,7 @@ atTag tag = deep (isElem >>> hasName tag)
 -- | Retrieve sequence for gene symbol (e.g. yhfA) from accession number (e.g. NC_000913.3) and if available entrez registration (toolname,devemail)
 retrieveGeneSymbolFasta :: String -> String -> Maybe (String,String) -> IO String
 retrieveGeneSymbolFasta genesymbol accession registrationInfo = do
-  let query1 = EntrezHTTPQuery (Just "esearch") (Just "gene") (("term=" ++ genesymbol) ++ (urlEncode ("[Gene Name] AND " ++ accession ++ "[Nucleotide Accession]")))
+  let query1 = EntrezHTTPQuery (Just "esearch") (Just "gene") ("term=" ++ genesymbol ++ urlEncode ("[Gene Name] AND " ++ accession ++ "[Nucleotide Accession]"))
   --print query1
   uniqueidresponse <- entrezHTTP query1
   --print uniqueidresponse
@@ -368,8 +367,8 @@ retrieveGeneSymbolFasta genesymbol accession registrationInfo = do
   let seqStart = chrStart (geneGenomicInfo parsedSummary)
   let seqStop = chrStop (geneGenomicInfo parsedSummary)
   let strand = convertCoordinatesToStrand seqStart seqStop
-  fastaresponse <- fetchNucleotideString accessionVersion seqStart seqStop strand registrationInfo
-  return fastaresponse
+  fetchNucleotideString accessionVersion seqStart seqStop strand registrationInfo
+  
 
 -- | Fetches sequence strings from the nucleotide database. nucleotideId can be a NCBI accession number or gene id.
 --   Strand is 1 in case of plus strand (forward) or 2 minus (reverse) strand, the setStrand function can be used for conversion. 
@@ -378,7 +377,7 @@ fetchNucleotideString nucleotideId seqStart seqStop strand maybeRegistrationInfo
   let registrationInfo = maybeBuildRegistration maybeRegistrationInfo
   let program' = Just "efetch"
   let database' = Just "nucleotide"
-  let query' = "id=" ++ nucleotideId ++ "&seq_start=" ++ (show seqStart) ++ "&seq_stop=" ++ (show seqStop) ++ "&rettype=fasta" ++ "&strand=" ++ (show strand) ++ registrationInfo
+  let query' = "id=" ++ nucleotideId ++ "&seq_start=" ++ show seqStart ++ "&seq_stop=" ++ show seqStop ++ "&rettype=fasta" ++ "&strand=" ++ show strand ++ registrationInfo
   let entrezQuery = EntrezHTTPQuery program' database' query'
   entrezHTTP entrezQuery
 

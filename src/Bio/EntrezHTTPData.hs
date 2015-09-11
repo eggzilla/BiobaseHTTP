@@ -3,7 +3,7 @@
 module Bio.EntrezHTTPData where
 
 -- | Input datastructure for EntrezHTTP. Program is the selected eutility (e.g efetch, esearch),
-database is the selected Entrez database (nucleotide) and query the query string.
+--   database is the selected Entrez database (nucleotide) and query the query string.
 data EntrezHTTPQuery = EntrezHTTPQuery 
   { program :: Maybe String
   , database :: Maybe String

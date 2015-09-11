@@ -10,8 +10,10 @@ name:                EntrezHTTP
 version:             1.0.0
 synopsis:            Libary to interface with the NCBI Entrez REST service.
 description:         EntrezHTTP provides functions to query the NCBI entrez REST interface.
+                     .
 		     There are multiple different databases and tools, so called eutils,
 		     provided by the service.
+		     .
                      For more information on Entrez refer to: <http://www.ncbi.nlm.nih.gov/gquery/>.
                      .
                      Information on the webservice can be found at: <http://www.ncbi.nlm.nih.gov/books/NBK25497/>.

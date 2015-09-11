@@ -1,19 +1,29 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Arrows #-}
 
--- | Interface for the NCBI Entrez REST webservice
--- The entrezHTTP function provides a interface to the NCBI Entrez REST service.
--- A series of different eutilites () and databases are provided by the REST interface.
--- Response depends on the combination of eutil and database, as well requested returntype.
--- Parsers for specific combinations are included.
--- If you use this libary in a tool, please read <http://www.ncbi.nlm.nih.gov/books/NBK25497/ A General Introduction to the E-utilities> carefully
--- and register your tool at eutilities@ncbi.nlm.nih.gov. You can append your registration info generated
--- with the included buildRegistration function to your query.
+-- | Interface for the NCBI Entrez REST webservice.
+--   
+--   The entrezHTTP function provides a interface to the NCBI Entrez REST service.
+--   
+--   A series of different eutilites and databases are provided by the REST interface.
+--   Response depends on the combination of eutil and database, as well requested returntype.
+--   Specific combinations have wrapper functions with corresponding parsing functions included (see Usage example).
+--   
+--   If you use this libary in a tool, please read <http://www.ncbi.nlm.nih.gov/books/NBK25497/ A General Introduction to the E-utilities> carefully and register your tool at eutilities@ncbi.nlm.nih.gov. You can append your registration info generated
+--   with the included buildRegistration function to your query.
+--
+-- == Usage example:
+--
+-- Retrieve a nucleotide sequence for Escherichia coli
+-- 
+-- >  nucleotideFasta <- fetchNucleotideString "NC_000913.3" 50 1000 "+" Nothing
 
 module Bio.EntrezHTTP (-- * Datatypes
                        module Bio.EntrezHTTPData,
-		       -- * Retrieval function
+                       -- * Retrieval function
                        entrezHTTP,
+                       retrieveGeneSymbolFasta,
+                       fetchNucleotideString,
                        retrieveElementsEntrez,
                        portionListElements,
                        -- * Parsing functions
@@ -22,9 +32,11 @@ module Bio.EntrezHTTP (-- * Datatypes
                        readEntrezParentIds,
                        readEntrezSummaries,
                        readEntrezSearch,
-                       retrieveGeneSymbolFasta,
-		       -- * auxiliary functions
-                       buildRegistration
+                       -- * auxiliary functions
+                       buildRegistration,
+                       maybeBuildRegistration,
+                       setStrand,
+                       convertCoordinatesToStrand
                       ) where
 
 import Network.HTTP.Conduit    
@@ -340,9 +352,9 @@ atTag tag = deep (isElem >>> hasName tag)
 ---------------------------------------
 -- Retrieval functions
 
--- | Retrieve sequence for gene symbol (e.g. yhfA) from accession number (e.g. NC_000913.3)
-retrieveGeneSymbolFasta :: String -> String -> IO String
-retrieveGeneSymbolFasta genesymbol accession = do
+-- | Retrieve sequence for gene symbol (e.g. yhfA) from accession number (e.g. NC_000913.3) and if available entrez registration (toolname,devemail)
+retrieveGeneSymbolFasta :: String -> String -> Maybe (String,String) -> IO String
+retrieveGeneSymbolFasta genesymbol accession registrationInfo = do
   let query1 = EntrezHTTPQuery (Just "esearch") (Just "gene") (("term=" ++ genesymbol) ++ (urlEncode ("[Gene Name] AND " ++ accession ++ "[Nucleotide Accession]")))
   --print query1
   uniqueidresponse <- entrezHTTP query1
@@ -355,22 +367,52 @@ retrieveGeneSymbolFasta genesymbol accession = do
   let accessionVersion = chrAccVer (geneGenomicInfo parsedSummary)
   let seqStart = chrStart (geneGenomicInfo parsedSummary)
   let seqStop = chrStop (geneGenomicInfo parsedSummary)
-  let strand = show (setStrand seqStart seqStop)
-  let query3 = EntrezHTTPQuery (Just "efetch") (Just "nucleotide") ("id=" ++ accessionVersion ++ "&strand=" ++ strand ++ "&seq_start=" ++ show seqStart ++ "&seq_stop=" ++ show seqStop ++ "&rettype=fasta")
-  fastaresponse <- entrezHTTP query3
+  let strand = convertCoordinatesToStrand seqStart seqStop
+  fastaresponse <- fetchNucleotideString accessionVersion seqStart seqStop strand registrationInfo
   return fastaresponse
 
---retrieveNucleotideFasta
+-- | Fetches sequence strings from the nucleotide database. nucleotideId can be a NCBI accession number or gene id.
+--   Strand is 1 in case of plus strand (forward) or 2 minus (reverse) strand, the setStrand function can be used for conversion. 
+fetchNucleotideString :: String -> Int -> Int -> Int -> Maybe (String,String) -> IO String
+fetchNucleotideString nucleotideId seqStart seqStop strand maybeRegistrationInfo = do
+  let registrationInfo = maybeBuildRegistration maybeRegistrationInfo
+  let program' = Just "efetch"
+  let database' = Just "nucleotide"
+  let query' = "id=" ++ nucleotideId ++ "&seq_start=" ++ (show seqStart) ++ "&seq_stop=" ++ (show seqStop) ++ "&rettype=fasta" ++ "&strand=" ++ (show strand) ++ registrationInfo
+  let entrezQuery = EntrezHTTPQuery program' database' query'
+  entrezHTTP entrezQuery
 
-
-setStrand :: Int -> Int -> Int
-setStrand start end
+convertCoordinatesToStrand :: Int -> Int -> Int
+convertCoordinatesToStrand start end
   | start <= end = 1
   | otherwise = 2
+
+setStrand :: String -> Int
+setStrand strandString
+  | strandString == "+" = 1
+  | strandString == "-" = 2
+  | strandString == "forward" = 1
+  | strandString == "reverse" = 2
+  | strandString == "Forward" = 1
+  | strandString == "Reverse" = 2
+  | strandString == "plus" = 1
+  | strandString == "false" = 2
+  | strandString == "Plus" = 1
+  | strandString == "False" = 2
+  | otherwise = 1
 
 readInt :: String -> Int
 readInt = read
 
--- | 
+-- | Builds Entrez registration String if present
+maybeBuildRegistration :: Maybe (String,String) -> String
+maybeBuildRegistration maybeRegistration
+  | isJust maybeRegistration = buildRegistration toolname developeremail
+  | otherwise = ""
+  where registration = fromJust maybeRegistration
+        toolname = fst registration
+        developeremail = snd registration
+
+-- | Builds Entrez registration String that has to be appended to query key
 buildRegistration :: String -> String -> String
 buildRegistration toolname developeremail = "&tool=" ++ toolname ++ "&email=" ++ developeremail

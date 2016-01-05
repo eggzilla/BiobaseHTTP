@@ -1,0 +1,6 @@
+-*-change-log-*-
+1.0.1 Florian Eggenhofer <florian.eggenhofer@univie.ac.at> 5. January 2016
+	* Fixed version constraints, added changelog
+1.0.0 Florian Eggenhofer <florian.eggenhofer@univie.ac.at> 11.September 2015
+	* Initial version
+

@@ -48,6 +48,7 @@ import Bio.EntrezHTTPData
 import Bio.TaxonomyData --(Rank,SimpleTaxon)
 import qualified Data.ByteString.Char8 as B
 import Network.HTTP.Base
+import qualified Data.Text.Lazy as TL 
       
 -- | Send query and parse return XML 
 startSession :: String -> String -> String -> IO String
@@ -188,7 +189,7 @@ parseEntrezSimpleTaxons = getChildren >>> atTag "Taxon" >>>
   simple_Rank <- atTag "Rank" >>> getChildren >>> getText -< entrezSimpleTaxon
   returnA -< SimpleTaxon {
     simpleTaxId = read simple_TaxId :: Int,
-    simpleScientificName = B.pack simple_ScientificName,
+    simpleScientificName = TL.pack simple_ScientificName,
     simpleParentTaxId = read simple_ParentTaxId :: Int,
     simpleRank = read simple_Rank :: Rank
     } 

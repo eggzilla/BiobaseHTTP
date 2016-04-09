@@ -7,7 +7,7 @@ name:                EntrezHTTP
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             1.0.1
+version:             1.0.2
 synopsis:            Libary to interface with the NCBI Entrez REST service.
 description:         EntrezHTTP provides functions to query the NCBI entrez REST interface.
                      .
@@ -37,8 +37,8 @@ source-repository head
 
 source-repository this
   type:     darcs
-  location: https://github.com/eggzilla/EntrezHTTP/tree/v1.0.1
-  tag:      v1.0.1
+  location: https://github.com/eggzilla/EntrezHTTP/tree/v1.0.2
+  tag:      v1.0.2
 
 library
   -- Modules exported by the library.
@@ -50,7 +50,7 @@ library
   -- compiler options: 
   ghc-options:         -Wall -O2
   -- Other library packages from which modules are imported.
-  build-depends:       base >=4.5 && <5, transformers >= 0.4 && <0.5, bytestring, conduit, HTTP, http-conduit, hxt, network, mtl, biocore, Taxonomy
+  build-depends:       base >=4.5 && <5, transformers >= 0.4 && <0.5, bytestring, conduit, HTTP, http-conduit, hxt, network, mtl, biocore, Taxonomy>=1.0.2, text
   
   -- Directories containing source files.
   hs-source-dirs:      src

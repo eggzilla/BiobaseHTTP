@@ -1,3 +1,6 @@
+--Testscript
+--runghc -package-db --ghc-arg=.cabal-sandbox/x86_64-linux-ghc-8.0.1-packages.conf.d/  EntrezHTTPtest.hs
+-- needs cmdargs and biofasta packages
 {-# LANGUAGE Arrows #-}
 module Main where
     

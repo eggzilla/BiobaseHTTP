@@ -1,4 +1,6 @@
 -*-change-log-*-
+1.0.3 Florian Eggenhofer <egg@informatik.uni-freiburg.de> 12. November 2016
+	* Default NCBI URL now uses HTTPS
 1.0.2 Florian Eggenhofer <egg@informatik.uni-freiburg.de> 23. October 2016
 	* Now compatible with GHC 8.0
 	* Travis testing for GHC 7.6 - GHC 8.0

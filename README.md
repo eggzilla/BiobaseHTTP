@@ -1,4 +1,4 @@
-#EntrezHTTP
+EntrezHTTP
 [![Hackage](https://img.shields.io/hackage/v/EntrezHTTP.svg)](https://hackage.haskell.org/package/EntrezHTTP) [![Build Status](https://travis-ci.org/eggzilla/EntrezHTTP.svg?branch=master)](https://travis-ci.org/eggzilla/EntrezHTTP)
 =========
 EntrezHTTP provides functions to query the NCBI entrez REST interface.

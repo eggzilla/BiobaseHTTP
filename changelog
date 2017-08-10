@@ -1,4 +1,6 @@
 -*-change-log-*-
+1.0.4 Florian Eggenhofer <egg@informatik.uni-freiburg.de> 10. August 2017
+	* Updated version constraints for Taxonomy
 1.0.3 Florian Eggenhofer <egg@informatik.uni-freiburg.de> 12. November 2016
 	* Default NCBI URL now uses HTTPS
 1.0.2 Florian Eggenhofer <egg@informatik.uni-freiburg.de> 23. October 2016

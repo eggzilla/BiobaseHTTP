@@ -4,7 +4,7 @@
 -- | Interface for the NCBI Entrez REST webservice.
 --   
 --   The entrezHTTP function provides a interface to the NCBI Entrez REST service.
---   
+-- 
 --   A series of different eutilites and databases are provided by the REST interface.
 --   Response depends on the combination of eutil and database, as well requested returntype.
 --   Specific combinations have wrapper functions with corresponding parsing functions included (see Usage example).
@@ -42,11 +42,10 @@ module Bio.EntrezHTTP (-- * Datatypes
 import Network.HTTP.Conduit    
 import qualified Data.ByteString.Lazy.Char8 as L8    
 import Text.XML.HXT.Core
-import Network
+import Network.Socket
 import Data.Maybe
 import Bio.EntrezHTTPData
-import Bio.TaxonomyData --(Rank,SimpleTaxon)
-import qualified Data.ByteString.Char8 as B
+import Bio.TaxonomyData
 import Network.HTTP.Base
 import qualified Data.Text.Lazy as TL 
       

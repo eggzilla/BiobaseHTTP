@@ -11,7 +11,7 @@ description:         BiobaseHTTP provides functions to interface the Bioinformat
                      .
                      If you plan to include the library in a tool, register it as explained <http://www.ncbi.nlm.nih.gov/books/NBK25497/#chapter2.Usage_Guidelines_and_Requiremen here>.
                      .
-                     BiobaseREST is the successor of the deprecated EntrezHTTP library.
+                     BiobaseHTTP is the successor of the deprecated EntrezHTTP library.
 
 license:             GPL-3
 license-file:        LICENSE
@@ -37,7 +37,7 @@ source-repository this
   tag:      1.0.0
 
 library
-  exposed-modules:     Bio.EntrezHTTP, Bio.EntrezHTTPData, Bio.EnsemblHTTP
+  exposed-modules:     Biobase.Entrez.HTTP, Biobase.Entrez.HTTPData, Biobase.Ensembl.HTTP
   ghc-options:         -Wall
   build-depends:       base >=4.5 && <5, transformers, bytestring, conduit, HTTP, http-conduit, hxt, network, mtl, Taxonomy>=1.0.3, text, aeson, either-unwrap, BiobaseEnsembl
-  hs-source-dirs:      src
+  hs-source-dirs:      .

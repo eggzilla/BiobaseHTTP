@@ -2,7 +2,7 @@
 {-# LANGUAGE Arrows #-}
 -- | Interface for Ensembl
 
-module Bio.EnsemblREST (
+module Biobase.Ensembl.HTTP (
                        startXRefSession,
                        requestGOTermsWithGeneIds,
                        requestUniProtWithGeneIds,

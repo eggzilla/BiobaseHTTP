@@ -12,7 +12,7 @@ data EntrezHTTPQuery = EntrezHTTPQuery
   deriving (Show, Eq)
 
 -- | Data structure for Entrez summary result
-data EntrezSummary = EntrezSummary
+newtype EntrezSummary = EntrezSummary
   {  documentSummaries :: [EntrezDocSum]}
   deriving (Show, Eq)
 
@@ -28,7 +28,7 @@ data SummaryItem = SummaryItem
   deriving (Show, Eq)
 
 -- | Gene doc summary
-data EntrezGeneSummary = EntrezGeneSummary
+newtype EntrezGeneSummary = EntrezGeneSummary
   {  geneSummaries :: [EntrezGeneDocSummary]}
   deriving (Show, Eq)
 

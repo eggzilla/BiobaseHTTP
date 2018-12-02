@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE Arrows #-}
 -- | Interface for Ensembl
 
 module Biobase.Ensembl.HTTP (
@@ -22,8 +21,7 @@ import Data.List
 requestGOTermsWithGeneIds :: [String] -> IO [[String]]
 requestGOTermsWithGeneIds geneIds = do
   let queryParameters = "?external_db=GO;all_levels=1;content-type=application/json"
-  uniprotIds <- mapM (requestGOTermsWithGeneId queryParameters) geneIds
-  return uniprotIds
+  mapM (requestGOTermsWithGeneId queryParameters) geneIds
 
 requestGOTermsWithGeneId :: String -> String -> IO [String]
 requestGOTermsWithGeneId queryParameters geneId = do
@@ -31,20 +29,19 @@ requestGOTermsWithGeneId queryParameters geneId = do
   responseJson <- startXRefSession queryParameters geneId
   --3/s
   threadDelay 330000
-  if (isRight responseJson)
+  if isRight responseJson
     then return (extractGOTerms (fromRight responseJson))
     else return []
 
 extractGOTerms :: [EnsemblEntry] -> [String]
 extractGOTerms entries = goTerms
-  where goEntries = filter (\a -> "GO" == (fromMaybe "" (dbname a))) entries
+  where goEntries = filter (\a -> "GO" == fromMaybe "" (dbname a)) entries
         goTerms = map (fromJust . display_id) goEntries
 
 requestUniProtWithGeneIds :: [String] -> IO [String]
 requestUniProtWithGeneIds geneIds = do
   let queryParameters = "content-type=application/json"
-  uniprotIds <- mapM (requestUniProtWithGeneId queryParameters) geneIds
-  return uniprotIds
+  mapM (requestUniProtWithGeneId queryParameters) geneIds
 
 requestUniProtWithGeneId :: String -> String -> IO String
 requestUniProtWithGeneId queryParameters geneId = do
@@ -52,13 +49,13 @@ requestUniProtWithGeneId queryParameters geneId = do
   responseJson <- startXRefSession queryParameters geneId
   -- 3/s
   threadDelay 330000
-  if (isRight responseJson)
+  if isRight responseJson
     then return (extractUniProtId (fromRight responseJson))
     else return []
 
 extractUniProtId :: [EnsemblEntry] -> String
 extractUniProtId entries = uniprotName
-  where uniprotEntry = find (\a -> "Uniprot/SWISSPROT" == (fromMaybe "" (dbname a))) entries
+  where uniprotEntry = find (\a -> "Uniprot/SWISSPROT" == fromMaybe "" (dbname a)) entries
         uniprotName = if isJust uniprotEntry then fromMaybe [] (display_id (fromJust uniprotEntry)) else []
 
 startXRefSession :: String -> String -> IO (Either String [EnsemblEntry])
@@ -73,6 +70,4 @@ startXRefSession queryParameters xrefId = do
 -- | Send query and return response
 -- http://rest.ensemblgenomes.org/xrefs/id/AAC73113?content-type=application/json
 sendXRefQuery :: String -> String -> IO L8.ByteString
-sendXRefQuery xrefId queryParameters = do
-  response <- simpleHttp ("http://rest.ensemblgenomes.org/xrefs/id/" ++ xrefId ++ queryParameters)
-  return response
+sendXRefQuery xrefId queryParameters = simpleHttp ("http://rest.ensemblgenomes.org/xrefs/id/" ++ xrefId ++ queryParameters)

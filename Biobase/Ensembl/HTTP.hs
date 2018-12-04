@@ -17,48 +17,49 @@ import Biobase.Ensembl.REST.Types
 import Control.Concurrent
 import Data.Maybe
 import Data.List
+import qualified Data.Text as T
 
-requestGOTermsWithGeneIds :: [String] -> IO [[String]]
+requestGOTermsWithGeneIds :: [T.Text] -> IO [(T.Text,[T.Text])]
 requestGOTermsWithGeneIds geneIds = do
-  let queryParameters = "?external_db=GO;all_levels=1;content-type=application/json"
+  let queryParameters = T.pack "?external_db=GO;all_levels=1;content-type=application/json"
   mapM (requestGOTermsWithGeneId queryParameters) geneIds
 
-requestGOTermsWithGeneId :: String -> String -> IO [String]
+requestGOTermsWithGeneId :: T.Text -> T.Text -> IO (T.Text,[T.Text])
 requestGOTermsWithGeneId queryParameters geneId = do
   --let protid= "AAC73113"
   responseJson <- startXRefSession queryParameters geneId
   --3/s
   threadDelay 330000
   if isRight responseJson
-    then return (extractGOTerms (fromRight responseJson))
-    else return []
+    then return (geneId,(extractGOTerms (fromRight responseJson)))
+    else return (geneId,[])
 
-extractGOTerms :: [EnsemblEntry] -> [String]
+extractGOTerms :: [EnsemblEntry] -> [T.Text]
 extractGOTerms entries = goTerms
-  where goEntries = filter (\a -> "GO" == fromMaybe "" (dbname a)) entries
+  where goEntries = filter (\a -> T.pack "GO" == fromMaybe "" (dbname a)) entries
         goTerms = map (fromJust . display_id) goEntries
 
-requestUniProtWithGeneIds :: [String] -> IO [String]
+requestUniProtWithGeneIds :: [T.Text] -> IO [(T.Text,T.Text)]
 requestUniProtWithGeneIds geneIds = do
-  let queryParameters = "content-type=application/json"
+  let queryParameters = T.pack "?external_db=Uniprot/SWISSPROT;all_levels=1;content-type=application/json"
   mapM (requestUniProtWithGeneId queryParameters) geneIds
 
-requestUniProtWithGeneId :: String -> String -> IO String
+requestUniProtWithGeneId :: T.Text -> T.Text -> IO (T.Text,T.Text)
 requestUniProtWithGeneId queryParameters geneId = do
   --let protid= "AAC73113"
   responseJson <- startXRefSession queryParameters geneId
   -- 3/s
   threadDelay 330000
   if isRight responseJson
-    then return (extractUniProtId (fromRight responseJson))
-    else return []
+    then return (geneId,(extractUniProtId (fromRight responseJson)))
+    else return (geneId,T.empty)
 
-extractUniProtId :: [EnsemblEntry] -> String
+extractUniProtId :: [EnsemblEntry] -> T.Text
 extractUniProtId entries = uniprotName
-  where uniprotEntry = find (\a -> "Uniprot/SWISSPROT" == fromMaybe "" (dbname a)) entries
-        uniprotName = if isJust uniprotEntry then fromMaybe [] (display_id (fromJust uniprotEntry)) else []
+  where uniprotEntry = find (\a -> T.pack "Uniprot/SWISSPROT" == fromMaybe "" (dbname a)) entries
+        uniprotName = if isJust uniprotEntry then fromMaybe T.empty (display_id (fromJust uniprotEntry)) else T.empty
 
-startXRefSession :: String -> String -> IO (Either String [EnsemblEntry])
+startXRefSession :: T.Text -> T.Text -> IO (Either String [EnsemblEntry])
 startXRefSession queryParameters xrefId = do
   response <- withSocketsDo
       $ sendXRefQuery xrefId queryParameters
@@ -69,5 +70,5 @@ startXRefSession queryParameters xrefId = do
 
 -- | Send query and return response
 -- http://rest.ensemblgenomes.org/xrefs/id/AAC73113?content-type=application/json
-sendXRefQuery :: String -> String -> IO L8.ByteString
-sendXRefQuery xrefId queryParameters = simpleHttp ("http://rest.ensemblgenomes.org/xrefs/id/" ++ xrefId ++ queryParameters)
+sendXRefQuery :: T.Text -> T.Text -> IO L8.ByteString
+sendXRefQuery xrefId queryParameters = simpleHttp ("http://rest.ensemblgenomes.org/xrefs/id/" ++ T.unpack xrefId ++ T.unpack queryParameters)

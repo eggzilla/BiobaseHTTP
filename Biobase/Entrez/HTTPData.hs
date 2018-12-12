@@ -1,18 +1,18 @@
 -- | Data structures for Entrez HTTP queries
 
-module Bio.EntrezHTTPData where
+module Biobase.Entrez.HTTPData where
 
 -- | Input datastructure for EntrezHTTP. Program is the selected eutility (e.g efetch, esearch),
 --   database is the selected Entrez database (nucleotide) and query the query string.
-data EntrezHTTPQuery = EntrezHTTPQuery 
+data EntrezHTTPQuery = EntrezHTTPQuery
   { program :: Maybe String
   , database :: Maybe String
-  , query :: String 
+  , query :: String
   }
   deriving (Show, Eq)
 
 -- | Data structure for Entrez summary result
-data EntrezSummary = EntrezSummary
+newtype EntrezSummary = EntrezSummary
   {  documentSummaries :: [EntrezDocSum]}
   deriving (Show, Eq)
 
@@ -28,7 +28,7 @@ data SummaryItem = SummaryItem
   deriving (Show, Eq)
 
 -- | Gene doc summary
-data EntrezGeneSummary = EntrezGeneSummary
+newtype EntrezGeneSummary = EntrezGeneSummary
   {  geneSummaries :: [EntrezGeneDocSummary]}
   deriving (Show, Eq)
 

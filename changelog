@@ -1,4 +1,8 @@
 -*-change-log-*-
+1.1.0 Florian Eggenhofer <egg@informatik.uni-freiburg.de> 12 December 2018
+	* Changed library name to BiobaseHTTP
+	* Now using Biobase libraries
+	* Added functionality for Ensembl Genomes API requests
 1.0.4 Florian Eggenhofer <egg@informatik.uni-freiburg.de> 10. August 2017
 	* Updated version constraints for Taxonomy
 1.0.3 Florian Eggenhofer <egg@informatik.uni-freiburg.de> 12. November 2016

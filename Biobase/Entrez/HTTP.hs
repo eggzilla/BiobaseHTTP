@@ -46,7 +46,7 @@ import Text.XML.HXT.Core
 import Network.Socket
 import Data.Maybe
 import Biobase.Entrez.HTTPData
-import Bio.TaxonomyData
+import Biobase.Taxonomy.Types
 import Network.HTTP.Base
 import qualified Data.Text.Lazy as TL
 

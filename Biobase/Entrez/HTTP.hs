@@ -41,6 +41,7 @@ module Biobase.Entrez.HTTP (-- * Datatypes
 
 import Network.HTTP.Conduit
 import qualified Data.ByteString.Lazy.Char8 as L8
+import qualified Data.ByteString.Char8 as B
 import Text.XML.HXT.Core
 import Network.Socket
 import Data.Maybe
@@ -117,17 +118,17 @@ parseEntrezTaxon = (isElem >>> hasName "Taxon") >>>
     _pubDate <- getChildren >>> (isElem >>> hasName "PubDate") >>> getChildren >>> getText -< entrezTaxon
     returnA -< Taxon {
       taxonTaxId = read _taxonomyId :: Int,
-      taxonScientificName = _scientificName,
+      taxonScientificName = (B.pack _scientificName),
       taxonParentTaxId = read _parentTaxonomyId :: Int,
       taxonRank = read _rank :: Rank,
-      division = _divison,
+      division = (B.pack _divison),
       geneticCode = _geneticCode,
       mitoGeneticCode = _mitoGeneticCode,
-      lineage = _lineage,
+      lineage = (B.pack _lineage),
       lineageEx = _lineageEx,
-      createDate = _createDate,
-      updateDate = _updateDate,
-      pubDate = _pubDate
+      createDate = (B.pack _createDate),
+      updateDate = (B.pack _updateDate),
+      pubDate = (B.pack _pubDate)
     }
 
 parseTaxonGeneticCode :: ArrowXml a => a XmlTree TaxGenCode
@@ -137,10 +138,10 @@ parseTaxonGeneticCode = getChildren >>> atTag "GeneticCode" >>>
   _gcName <- atTag "GCName" >>> getChildren >>> getText -< geneticcode
   returnA -< TaxGenCode {
     geneticCodeId = read _gcId :: Int,
-    abbreviation = Nothing,
-    geneCodeName = _gcName,
-    cde = [],
-    starts = []
+    abbreviation = B.empty,
+    geneCodeName = (B.pack _gcName),
+    cde = B.empty,
+    starts = B.empty
     }
 
 parseTaxonMitoGeneticCode :: ArrowXml a => a XmlTree TaxGenCode
@@ -150,10 +151,10 @@ parseTaxonMitoGeneticCode = getChildren >>> atTag "MitoGeneticCode" >>>
   _mgcName <- atTag "MGCName" >>> getChildren >>> getText -< mitogeneticcode
   returnA -< TaxGenCode {
     geneticCodeId = read _mgcId :: Int,
-    abbreviation = Nothing,
-    geneCodeName = _mgcName,
-    cde = [],
-    starts = []
+    abbreviation = B.empty,
+    geneCodeName = B.pack _mgcName,
+    cde = B.empty,
+    starts = B.empty
     }
 
 parseTaxonLineageEx :: ArrowXml a => a XmlTree [LineageTaxon]
@@ -170,7 +171,7 @@ parseLineageTaxon = getChildren >>> atTag "Taxon" >>>
   _lineageRank <- atTag "Rank" >>> getChildren >>> getText -< lineageTaxon
   returnA -< LineageTaxon {
     lineageTaxId = read _lineageTaxId :: Int,
-    lineageScienticName = _lineageScienticName,
+    lineageScienticName = (B.pack _lineageScienticName),
     lineageRank = read _lineageRank :: Rank
     }
 

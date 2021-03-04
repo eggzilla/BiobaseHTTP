@@ -16,13 +16,13 @@ description:         BiobaseHTTP provides functions to interface the Bioinformat
 license:             GPL-3
 license-file:        LICENSE
 author:              Florian Eggenhofer
-maintainer:          egg@informatik.uni-freiburg.de
+maintainer:          florian@eggenhofer.eu
 copyright:           Florian Eggenhofer
 homepage:	     https://github.com/eggzilla/BiobaseHTTP
 category:            Bioinformatics
 build-type:          Simple
 cabal-version:       >=1.8
-Tested-With: GHC == 8.4.4, GHC == 8.6.5
+Tested-With: GHC == 8.10.4, GHC == 9.0.1
 
 Extra-Source-Files:
         README.md ChangeLog.md
@@ -39,5 +39,5 @@ source-repository this
 library
   exposed-modules:     Biobase.Entrez.HTTP, Biobase.Entrez.HTTPData, Biobase.Ensembl.HTTP
   ghc-options:         -Wall
-  build-depends:       base >=4.5 && <5, transformers, bytestring, conduit, HTTP, http-conduit, hxt, network<=2.8.0.0, mtl, Taxonomy>=2.0.0, text, aeson, either-unwrap, BiobaseEnsembl
+  build-depends:       base >=4.5 && <5, transformers, bytestring, HTTP, req, hxt, network<=2.8.0.0, mtl, Taxonomy>=2.0.0, text, aeson, either-unwrap, BiobaseEnsembl
   hs-source-dirs:      .

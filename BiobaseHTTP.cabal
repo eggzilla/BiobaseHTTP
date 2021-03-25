@@ -33,11 +33,11 @@ source-repository head
 
 source-repository this
   type:     git
-  location: https://github.com/eggzilla/BiobaseHTTP/tree/1.2.0
-  tag:      1.2.0
+  location: https://github.com/eggzilla/BiobaseHTTP/tree/1.2.1
+  tag:      1.2.1
 
 library
   exposed-modules:     Biobase.Entrez.HTTP, Biobase.Entrez.HTTPData, Biobase.Ensembl.HTTP
   ghc-options:         -Wall
-  build-depends:       base >=4.5 && <5, transformers, bytestring, conduit, HTTP, http-conduit, hxt, network<=2.8.0.0, mtl, Taxonomy>=2.0.0, text, aeson, either-unwrap, BiobaseEnsembl
+  build-depends:       base >=4.5 && <5, transformers, bytestring, HTTP, http-client, hxt, network, mtl, Taxonomy>=2.0.0, text, aeson, either-unwrap, BiobaseEnsembl
   hs-source-dirs:      .

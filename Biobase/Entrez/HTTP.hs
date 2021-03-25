@@ -39,7 +39,7 @@ module Biobase.Entrez.HTTP (-- * Datatypes
                        convertCoordinatesToStrand
                       ) where
 
-import Network.HTTP.Conduit
+import Network.HTTP.Client
 import qualified Data.ByteString.Lazy.Char8 as L8
 import qualified Data.ByteString.Char8 as B
 import Text.XML.HXT.Core
@@ -53,14 +53,31 @@ import qualified Data.Text.Lazy as TL
 -- | Send query and parse return XML
 startSession :: String -> String -> String -> IO String
 startSession program' database' query' = do
-  requestXml <- withSocketsDo
-      $ sendQuery program' database' query'
-  let requestXMLString = L8.unpack requestXml
+  --requestXml <- withSocketsDo
+  --    $ sendQuery program' database' query'
+  let settings = managerSetProxy
+                (proxyEnvironment Nothing)
+                defaultManagerSettings
+  man <- newManager settings
+  request <- parseRequest ("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"++ program' ++ ".fcgi?" ++ "db=" ++ database' ++ "&" ++ query')
+  response <- httpLbs request man
+  let rbody = responseBody response
+  let requestXMLString = L8.unpack rbody
   return requestXMLString
+
 
 -- | Send query and return response XML
 sendQuery :: String -> String -> String -> IO L8.ByteString
-sendQuery program' database' query' = simpleHttp ("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"++ program' ++ ".fcgi?" ++ "db=" ++ database' ++ "&" ++ query')
+sendQuery program' database' query' = do
+--sendQuery program' database' query' = simpleHttp ("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"++ program' ++ ".fcgi?" ++ "db=" ++ database' ++ "&" ++ query')
+  let settings = managerSetProxy
+                (proxyEnvironment Nothing)
+                defaultManagerSettings
+  man <- newManager settings
+  request <- parseRequest ("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"++ program' ++ ".fcgi?" ++ "db=" ++ database' ++ "&" ++ query')
+  response <- httpLbs request man
+  let rbody = responseBody response
+  return rbody
 
 -- | Function for querying the NCBI entrez REST interface. Input EntrezHTTPQuery datatype is used to select database, program of interest and contains the query string.
 --   Please note that query strings containing whitespace or special characters need to be urlencoded. The response format and content depends on the query type, the output

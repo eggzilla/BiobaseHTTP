@@ -8,7 +8,7 @@ module Biobase.Ensembl.HTTP (
                        EnsemblEntry(..)
                       ) where
 
-import Network.HTTP.Conduit
+import Network.HTTP.Client
 import qualified Data.ByteString.Lazy.Char8 as L8
 import Network.Socket
 import Data.Aeson
@@ -61,14 +61,21 @@ extractUniProtId entries = uniprotName
 
 startXRefSession :: T.Text -> T.Text -> IO (Either String [EnsemblEntry])
 startXRefSession queryParameters xrefId = do
-  response <- withSocketsDo
-      $ sendXRefQuery xrefId queryParameters
-  let decodedJson = eitherDecode response :: Either String [EnsemblEntry]
+  --response <- withSocketsDo
+  --    $ sendXRefQuery xrefId queryParameters
+  let settings = managerSetProxy
+            (proxyEnvironment Nothing)
+            defaultManagerSettings
+  man <- newManager settings
+  request <- parseRequest ("http://rest.ensemblgenomes.org/xrefs/id/" ++ T.unpack xrefId ++ T.unpack queryParameters)
+  response <- httpLbs request man
+  let rbody = responseBody response
+  let decodedJson = eitherDecode rbody :: Either String [EnsemblEntry]
   return decodedJson
 
 --"[{\"display_id\":\"00300+2.7.2.4+1.1.1.3\",\"primary_id\":\"00300+2.7.2.4+1.1.1.3\",\"version\":\"0\",\"description\":\"\",\"dbname\":\"KEGG_Enzyme\",\"synonyms\":[],\"info_text\":\"\",\"info_type\":\"NONE\",\"db_display_name\":\"KEGG Pathway and Enzyme\"}]""
 
 -- | Send query and return response
 -- http://rest.ensemblgenomes.org/xrefs/id/AAC73113?content-type=application/json
-sendXRefQuery :: T.Text -> T.Text -> IO L8.ByteString
-sendXRefQuery xrefId queryParameters = simpleHttp ("http://rest.ensemblgenomes.org/xrefs/id/" ++ T.unpack xrefId ++ T.unpack queryParameters)
+--sendXRefQuery :: T.Text -> T.Text -> IO L8.ByteString
+--sendXRefQuery xrefId queryParameters = simpleHttp ("http://rest.ensemblgenomes.org/xrefs/id/" ++ T.unpack xrefId ++ T.unpack queryParameters)
